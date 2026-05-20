@@ -1,0 +1,75 @@
+/* src/pages/AllEvaluations.css */
+
+.all-evaluations {
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 20px 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.form-logo {
+  height: 60px;
+}
+
+.home-btn {
+  background: #004080;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: 0.3s ease;
+  font-weight: 500;
+}
+
+.home-btn:hover {
+  background: #0066cc;
+}
+
+h2, h3 {
+  text-align: center;
+  margin: 8px 0;
+  color: #222;
+}
+
+.evaluation-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 25px;
+  font-size: 15px;
+}
+
+.evaluation-table thead {
+  background: #004080;
+  color: white;
+}
+
+.evaluation-table th,
+.evaluation-table td {
+  border: 1px solid #ddd;
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.evaluation-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.evaluation-table tbody tr:hover {
+  background: #eef6ff;
+  transition: background 0.2s ease;
+}
+
+.evaluation-table td strong {
+  color: #004080;
+  font-weight: 600;
+}

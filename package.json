@@ -1,0 +1,26 @@
+{
+  "name": "pms-fullstack",
+  "version": "1.0.0",
+  "description": "Performance Management System - Full Stack Application",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "setup-db": "psql -U postgres -f setup-database.sql",
+    "test-api": "powershell -ExecutionPolicy Bypass -File test-api.ps1",
+    "start-app": "powershell -ExecutionPolicy Bypass -File start-app.ps1",
+    "kill-port": "powershell -Command \"Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }\"",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose up --build -d",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

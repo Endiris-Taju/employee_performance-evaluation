@@ -1,0 +1,750 @@
+/* Enhanced Professional Self Evaluation Styles */
+
+.self-evaluation {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.form-logo {
+  height: 50px;
+  width: auto;
+}
+
+.home-btn {
+  background: linear-gradient(135deg, var(--primary), var(--primary-600));
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.home-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Title */
+h2 {
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #1e293b;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #1e40af);
+  border-radius: 2px;
+}
+
+.home-btn {
+  background: linear-gradient(135deg, var(--primary), #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Evaluation Summary */
+.evaluation-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-600));
+}
+
+.summary-card.combined::before {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.summary-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.score-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.score-detail {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* Employee Info */
+.employee-info {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.employee-info label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.employee-info input {
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card-hover);
+  color: var(--text);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.employee-info input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Evaluation Sections */
+.evaluation-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.evaluation-section {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.evaluation-section h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Category Groups */
+.category-group {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--card-hover);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.category-group:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.category-label {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+/* Rating Options */
+.rating-options {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.rating-option {
+  flex: 1;
+  min-width: 60px;
+}
+
+.rating-option button {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card-hover);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.rating-option button:hover {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+.rating-option button.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-600));
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Comments Section */
+.comments-section {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.comments-section h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.comment-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.comment-group label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.comment-group textarea {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--card-hover);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.3s ease;
+}
+
+.comment-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Submit Area */
+.submit-area {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.submit-area button {
+  background: linear-gradient(135deg, var(--primary), var(--primary-600));
+  color: white;
+  padding: 1rem 3rem;
+  border-radius: 16px;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+}
+
+.submit-area button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
+}
+
+.submit-area button:active {
+  transform: translateY(-2px);
+}
+
+/* Messages */
+.error-message {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05));
+  color: #ef4444;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  margin-top: 1rem;
+  font-weight: 600;
+  text-align: center;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.success-message {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05));
+  color: #10b981;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-top: 1rem;
+  font-weight: 600;
+  text-align: center;
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .evaluation-sections {
+    grid-template-columns: 1fr;
+  }
+  
+  .evaluation-summary {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .self-evaluation {
+    padding: 1rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .evaluation-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .employee-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .comment-group {
+    grid-template-columns: 1fr;
+  }
+  
+  .rating-options {
+    justify-content: center;
+  }
+  
+  .rating-option {
+    min-width: 50px;
+  }
+  
+  .rating-option button {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 1rem;
+  }
+  
+  .evaluation-section {
+    padding: 1.5rem;
+  }
+  
+  .comments-section {
+    padding: 1.5rem;
+  }
+  
+  .submit-area button {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+  }
+}
+
+/* Evaluation Results Table Styles */
+.evaluation-results {
+  margin: 30px 0;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.evaluation-results h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.results-table table,
+.comments-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.results-table th,
+.comments-table th {
+  background: #343a40;
+  color: white;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #2d3748;
+}
+
+.results-table td,
+.comments-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: top;
+}
+
+.results-table tr:hover,
+.comments-table tr:hover {
+  background: #f8f9fa;
+}
+
+.total-row {
+  background: #e8f5e8;
+  font-weight: bold;
+}
+
+.total-row td {
+  padding: 15px 8px;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #2d3748;
+}
+
+.comments-section {
+  margin: 30px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced Comments Section Styles */
+.enhanced-comments-section {
+  margin: 30px 0;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-comments-section h3 {
+  text-align: center;
+  margin-bottom: 10px;
+  color: #2c3e50;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.comments-description {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.comments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.comment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.comment-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.comment-textarea::placeholder {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Responsive Design for Enhanced Comments */
+@media (max-width: 768px) {
+  .enhanced-comments-section {
+    margin: 20px 0;
+    padding: 20px;
+  }
+  
+  .comments-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .comment-textarea {
+    min-height: 100px;
+    padding: 10px;
+  }
+  
+  .enhanced-comments-section h3 {
+    font-size: 1.2rem;
+  }
+}
+
+.final-score {
+  text-align: center;
+  margin: 30px 0;
+  padding: 25px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.final-score h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Evaluation Table Styles */
+.evaluation-table-container {
+  margin: 20px 0;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.evaluation-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.evaluation-table th {
+  background: #343a40;
+  color: white;
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 2px solid #2d3748;
+  width: 16.67%;
+}
+
+.evaluation-table th:first-child {
+  text-align: left;
+  width: 25%;
+}
+
+.evaluation-table td {
+  padding: 8px;
+  border-bottom: 1px solid #e9ecef;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.category-label {
+  text-align: left;
+  font-weight: 500;
+  color: #495057;
+}
+
+.rating-cell {
+  padding: 4px;
+}
+
+.rating-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  background: white;
+  color: #495057;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.rating-btn:hover {
+  background: #f8f9fa;
+  border-color: #007bff;
+  transform: scale(1.05);
+}
+
+.rating-btn.selected {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+  transform: scale(1.1);
+}
+
+.evaluation-table tr:hover {
+  background: #f8f9fa;
+}
+
+/* Responsive Design for Tables */
+@media (max-width: 768px) {
+  .results-table table,
+  .comments-table table,
+  .evaluation-table {
+    font-size: 0.9rem;
+  }
+  
+  .results-table th,
+  .results-table td,
+  .comments-table th,
+  .comments-table td,
+  .evaluation-table th,
+  .evaluation-table td {
+    padding: 8px 6px;
+  }
+  
+  .evaluation-results,
+  .comments-section,
+  .evaluation-table-container {
+    margin: 20px 0;
+    padding: 15px;
+  }
+  
+  .rating-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+  
+  .evaluation-table th {
+    padding: 8px 4px;
+  }
+}

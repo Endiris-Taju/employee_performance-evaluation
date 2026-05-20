@@ -1,0 +1,592 @@
+/* Ethiopian Government Attendance Camera Styles */
+
+.attendance-camera-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+/* Header Section */
+.attendance-header {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.header-content .page-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, var(--primary), #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-content .page-subtitle {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.time-display, .location-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--card-hover);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.time-display .icon, .location-display .icon {
+  color: var(--primary);
+  font-size: 1.25rem;
+}
+
+/* Status Messages */
+.status-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  font-weight: 600;
+  animation: slideInUp 0.3s ease-out;
+}
+
+.status-message.success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05));
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-message.error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05));
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.status-icon {
+  font-size: 1.25rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-600));
+}
+
+.stat-card.present::before { background: linear-gradient(90deg, #10b981, #059669); }
+.stat-card.absent::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.stat-card.late::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.stat-card.total::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-icon {
+  font-size: 2rem;
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 16px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-card.present .stat-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.stat-card.absent .stat-icon { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.stat-card.late .stat-icon { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.stat-card.total .stat-icon { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Camera Section */
+.camera-section {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.camera-controls {
+  margin-bottom: 2rem;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.camera-btn, .action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.camera-btn.start {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.camera-btn.stop {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.action-btn {
+  background: var(--card-hover);
+  color: var(--text);
+  border: 2px solid var(--border);
+}
+
+.camera-btn:hover, .action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.camera-btn.start:hover { box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+.camera-btn.stop:hover { box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3); }
+
+/* Camera Grid */
+.camera-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.camera-feed h3, .captured-photo h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.video-container {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--card-hover);
+  aspect-ratio: 16/9;
+}
+
+.video-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.video-feed.active {
+  display: block;
+}
+
+.camera-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  gap: 1rem;
+}
+
+.camera-placeholder .fi-camera {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.camera-placeholder p {
+  text-align: center;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Capture Controls */
+.capture-controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.capture-btn, .checkin-btn, .checkout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+  justify-content: center;
+}
+
+.capture-btn {
+  background: var(--card-hover);
+  color: var(--text);
+  border: 2px solid var(--border);
+}
+
+.checkin-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.checkout-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.capture-btn:hover, .checkin-btn:hover, .checkout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.capture-btn:hover { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1); }
+.checkin-btn:hover { box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+.checkout-btn:hover { box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3); }
+
+.capture-btn:disabled, .checkin-btn:disabled, .checkout-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Captured Photo */
+.photo-container {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--card-hover);
+  aspect-ratio: 16/9;
+}
+
+.captured-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  gap: 1rem;
+}
+
+.photo-placeholder .fi-camera {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.photo-placeholder p {
+  text-align: center;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Attendance Logs */
+.attendance-logs {
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.attendance-logs h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+}
+
+.logs-table {
+  overflow-x: auto;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.no-logs {
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted);
+}
+
+.no-logs .fi-calendar {
+  font-size: 3rem;
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+.no-logs p {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Table Styles */
+.logs-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+}
+
+.logs-table th {
+  background: var(--card-hover);
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+}
+
+.logs-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.logs-table tr:last-child td {
+  border-bottom: none;
+}
+
+.logs-table tr:hover {
+  background: var(--card-hover);
+}
+
+.event-type {
+  padding: 0.25rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.event-type.checkin {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.event-type.checkout {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.photo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary);
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.photo-link:hover {
+  background: rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.no-photo {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .attendance-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .header-info {
+    align-items: center;
+  }
+  
+  .camera-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .attendance-camera-container {
+    padding: 1rem;
+  }
+  
+  .attendance-header {
+    padding: 1.5rem;
+  }
+  
+  .header-content .page-title {
+    font-size: 2rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .control-buttons {
+    flex-direction: column;
+  }
+  
+  .camera-btn, .action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .capture-controls {
+    flex-direction: column;
+  }
+  
+  .capture-btn, .checkin-btn, .checkout-btn {
+    width: 100%;
+  }
+  
+  .logs-table {
+    font-size: 0.875rem;
+  }
+  
+  .logs-table th, .logs-table td {
+    padding: 0.75rem 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-content .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .time-display, .location-display {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  
+  .camera-section, .attendance-logs {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,16 @@
+.employee-details {
+  padding: 2rem;
+  max-width: 600px;
+  margin: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.employee-details img.employee-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 1rem 0;
+}

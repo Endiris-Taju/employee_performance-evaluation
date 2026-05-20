@@ -1,0 +1,27 @@
+.complaints-page {
+  padding: 20px;
+}
+
+.complaints-page h2 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.complaints-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.complaints-table th,
+.complaints-table td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.complaints-table th {
+  background: #f4f6f8;
+  font-weight: 600;
+}

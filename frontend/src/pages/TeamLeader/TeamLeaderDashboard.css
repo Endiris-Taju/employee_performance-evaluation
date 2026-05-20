@@ -1,0 +1,317 @@
+/* --- Tabs --------------------------------------------------- */
+.tab-nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 5; /* stays above content but won't block links below */
+}
+
+.tab-nav span {
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.tab-nav span:hover {
+  background: #f3f4f6;
+}
+
+.tab-nav .active {
+  background: #111827;
+  color: #fff;
+}
+
+/* --- Fancy panel (Overview / Calendar boxes) ---------------- */
+.fancy-panel {
+  margin: 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.fancy-title {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+}
+
+.fancy-content {
+  display: flex;
+  gap:20px;
+}
+
+.overview-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+/* --- Header ------------------------------------------------- */
+.dashboard-container {
+  padding: 16px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dashboard-logo {
+  height: 40px;
+  width: 40px;
+  object-fit: contain;
+}
+
+/* --- Card grid ---------------------------------------------- */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative; /* prevents any weird overlay issues */
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.card-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.card-description {
+  color: #4b5563;
+  margin: 0 0 12px 0;
+}
+
+.eval-dates p {
+  margin: 4px 0;
+}
+
+/* --- Buttons ------------------------------------------------ */
+.btn {
+  display: inline-block;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn.primary {
+  background: #111827;
+  color: #fff !important;
+}
+
+.btn.primary:hover {
+  filter: brightness(1.1);
+}
+
+/* --- Bottom quick panels ----------------------------------- */
+.dashboard-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.task-card, .task-create-card, .dashboard-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.card-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* --- Calendar box ------------------------------------------ */
+.calendar-box {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+/* Evaluation Overview Styles */
+.evaluations-overview {
+  padding: 20px;
+}
+
+.evaluations-overview h2 {
+  margin: 0 0 24px 0;
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.eval-section {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.eval-section h3 {
+  margin: 0 0 16px 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.no-evals {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 20px;
+}
+
+.eval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eval-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.eval-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.eval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.eval-type {
+  background: #3b82f6;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.eval-score {
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.eval-details p {
+  margin: 0 0 6px 0;
+  color: #475569;
+  font-size: 14px;
+}
+
+.eval-details p:last-child {
+  margin-bottom: 0;
+}
+
+/* Evaluation Summary */
+.eval-summary {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.eval-summary h3 {
+  margin: 0 0 20px 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.summary-stat {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  display: block;
+  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .evaluations-overview {
+    padding: 16px;
+  }
+  
+  .eval-section {
+    padding: 16px;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .eval-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+}

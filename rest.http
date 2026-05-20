@@ -1,0 +1,129 @@
+
+
+### Register new user
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "mypassword",
+  "role": "member"
+}
+
+### Login (admin@example.com / password123)
+# @name login
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### Save token from login response
+@token = {{login.response.body.token}}
+
+
+### ============================
+### EMPLOYEES
+### ============================
+
+### Get all employees
+GET http://localhost:5000/api/employees
+Authorization: Bearer {{token}}
+
+### Add employee
+POST http://localhost:5000/api/employees
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "David",
+  "email": "david@example.com",
+  "phone": "111-222-3333",
+  "idNumber": "EMP004",
+  "position": "QA Tester",
+  "department": "Engineering",
+  "role": "member",
+  "photo": ""
+}
+
+
+### ============================
+### TASKS
+### ============================
+
+### Get all tasks
+GET http://localhost:5000/api/tasks
+Authorization: Bearer {{token}}
+
+### Add task
+POST http://localhost:5000/api/tasks
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Write Unit Tests",
+  "description": "Add tests for employee APIs",
+  "assignedTo": 1,
+  "dueDate": "2025-09-10",
+  "status": "pending"
+}
+
+### Update task
+PUT http://localhost:5000/api/tasks/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Write Integration Tests",
+  "description": "Expand coverage for employee APIs",
+  "assignedTo": 1,
+  "dueDate": "2025-09-15",
+  "status": "in-progress"
+}
+
+### Delete task
+DELETE http://localhost:5000/api/tasks/1
+Authorization: Bearer {{token}}
+
+
+### ============================
+### EVALUATIONS
+### ============================
+
+### Get all evaluations
+GET http://localhost:5000/api/evaluations
+Authorization: Bearer {{token}}
+
+### Submit new evaluation
+POST http://localhost:5000/api/evaluations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "type": "self",
+  "employeeId": 1,
+  "evaluatorId": 1,
+  "scores": { "teamwork": 8, "quality": 9, "punctuality": 10 },
+  "totalScore": 27,
+  "maxScore": 30
+}
+
+
+
+
+### Get all teams
+GET http://localhost:5000/api/teams
+Authorization: Bearer {{token}}
+
+### Add team
+POST http://localhost:5000/api/teams
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "QA Team",
+  "leaderId": 1,
+  "department": "Engineering"
+}

@@ -1,0 +1,288 @@
+/* src/pages/Admin/Teams.css */
+
+.teams-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc, #ffffff);
+  min-height: 100vh;
+}
+
+.teams-page h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #1e293b;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Department Groups */
+.department-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.department-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.department-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.department-header h2 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.team-count {
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Teams Grid */
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.team-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.team-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.team-header h3 {
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.team-stats {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.member-count {
+  background: #f0f9ff;
+  color: #0369a1;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.team-info {
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.info-item strong {
+  color: #374151;
+  min-width: 80px;
+}
+
+.expand-btn {
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.expand-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Team Members */
+.team-members {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.team-members h4 {
+  color: #1e293b;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.member-info {
+  flex: 1;
+}
+
+.member-name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.member-position {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.member-contact {
+  text-align: right;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.member-email {
+  margin-bottom: 0.25rem;
+}
+
+.member-phone {
+  color: #94a3b8;
+}
+
+/* Main table */
+.employee-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.employee-table th,
+.employee-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.employee-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.employee-table tr:hover td {
+  background: #f4f8fc;
+}
+
+/* Nested member table */
+.nested-table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.nested-table th,
+.nested-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.nested-table th {
+  background: #f0f2f5;
+  font-weight: 600;
+}
+
+.nested-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Buttons */
+.btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn.small {
+  font-size: 13px;
+  padding: 5px 12px;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn.primary {
+  background: #3498db;
+  color: #fff;
+}
+
+.btn.danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.btn.secondary {
+  background: #95a5a6;
+  color: #fff;
+}
