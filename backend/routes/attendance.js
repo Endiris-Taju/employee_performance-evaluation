@@ -110,7 +110,9 @@ router.get("/me", authMiddleware, async (req, res) => {
 router.get("/", authMiddleware, async (req, res) => {
   try {
     if (!requireStaff(req, res)) return;
-    const { employee_id, from, to } = req.query;
+    const employee_id = req.query.employee_id || req.query.employeeId;
+    const from = req.query.from || req.query.startDate;
+    const to = req.query.to || req.query.endDate;
 
     const where = [];
     const values = [];

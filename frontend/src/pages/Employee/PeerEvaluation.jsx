@@ -1,396 +1,327 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "./PeerEvaluation.css";
+import React, { useEffect, useMemo, useState } from "react";
 import { useData } from "../../context/DataContext";
 import { useAuth } from "../../context/AuthContext";
-import { FiUsers, FiAward, FiTarget, FiCheckCircle, FiAlertTriangle } from "react-icons/fi";
-import databaseService from "../../services/DatabaseService";
+import PageShell from "../../components/layout/PageShell";
+import { FiCheckCircle, FiAlertTriangle, FiUsers } from "react-icons/fi";
+import { apiFetch } from "../../services/api";
+import { getPeerCandidatesFromTeam } from "../../utils/evaluationHelpers";
+
+const CATEGORIES = [
+  { key: "teamwork", label: "Teamwork" },
+  { key: "communication", label: "Communication" },
+  { key: "problemSolving", label: "Problem solving" },
+  { key: "initiative", label: "Initiative" },
+  { key: "reliability", label: "Reliability" },
+  { key: "leadership", label: "Leadership" },
+  { key: "collaboration", label: "Collaboration" },
+  { key: "timeManagement", label: "Time management" },
+  { key: "ethicsCompliance", label: "Ethics & compliance" },
+  { key: "innovation", label: "Innovation" },
+  { key: "overallContribution", label: "Overall contribution" },
+];
+
+const DEFAULT_SCORES = Object.fromEntries(CATEGORIES.map((c) => [c.key, 4]));
 
 function PeerEvaluation() {
-  const { employees, savePeerEvaluation } = useData();
-  const { email, name } = useAuth();
+  const { employees, submitPeerEvaluation, fetchTeams } = useData();
+  const { email, userId, token } = useAuth();
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [myTeams, setMyTeams] = useState([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState("");
 
-  const me = employees.find((e) => e.email === email);
-  const today = new Date();
-  const formattedDate = today.toISOString().split("T")[0];
+  const me =
+    employees.find((e) => e.email === email) ||
+    employees.find((e) => String(e.id) === String(userId));
 
-  const [peerScores, setPeerScores] = useState({
-    teamwork: "4",
-    communication: "3",
-    problemSolving: "4",
-    initiative: "3",
-    reliability: "4",
-    leadership: "3",
-    collaboration: "4",
-    timeManagement: "3",
-    ethicsCompliance: "4",
-    innovation: "3",
-    overallContribution: "4"
-  });
-
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const [selectedColleagueId, setSelectedColleagueId] = useState("");
+  const [peerScores, setPeerScores] = useState(DEFAULT_SCORES);
   const [peerComments, setPeerComments] = useState({
     strengths: "",
     areasForImprovement: "",
     collaborationNotes: "",
-    overallFeedback: ""
+    overallFeedback: "",
   });
 
-  const [selectedPeer, setSelectedPeer] = useState("");
-  const [peerList, setPeerList] = useState([
-    { id: 1, name: "John Doe", department: "IT" },
-    { id: 2, name: "Sara Ali", department: "HR" },
-    { id: 3, name: "Michael Johnson", department: "Finance" },
-    { id: 4, name: "Aben Kebede", department: "Marketing" },
-    { id: 5, name: "Tigist Haile", department: "Operations" }
-  ]);
-
-  const evaluationCategories = [
-    { key: 'teamwork', label: 'Teamwork & Collaboration', icon: <FiUsers />, description: 'Ability to work effectively with team members' },
-    { key: 'communication', label: 'Communication Skills', icon: <FiTarget />, description: 'Clarity and effectiveness in communication' },
-    { key: 'problemSolving', label: 'Problem Solving', icon: <FiAward />, description: 'Analytical thinking and solution finding' },
-    { key: 'initiative', label: 'Initiative & Proactivity', icon: <FiTarget />, description: 'Taking initiative and driving projects' },
-    { key: 'reliability', label: 'Reliability & Dependability', icon: <FiCheckCircle />, description: 'Consistency and trustworthiness' },
-    { key: 'leadership', label: 'Leadership Qualities', icon: <FiAward />, description: 'Leadership potential and influence' },
-    { key: 'collaboration', label: 'Cross-Functional Collaboration', icon: <FiUsers />, description: 'Working with different departments' },
-    { key: 'timeManagement', label: 'Time Management', icon: <FiTarget />, description: 'Meeting deadlines and time efficiency' },
-    { key: 'ethicsCompliance', label: 'Ethics & Compliance', icon: <FiCheckCircle />, description: 'Adherence to ethical standards' },
-    { key: 'innovation', label: 'Innovation & Creativity', icon: <FiAward />, description: 'Creative thinking and innovation' },
-    { key: 'overallContribution', label: 'Overall Contribution', icon: <FiTarget />, description: 'Total contribution to team success' }
-  ];
-
-  const handleScoreChange = (category, value) => {
-    setPeerScores({ ...peerScores, [category]: value });
-    setSuccess("");
-    setError("");
-  };
-
-  const handleCommentChange = (field, value) => {
-    setPeerComments({ ...peerComments, [field]: value });
-    setSuccess("");
-    setError("");
-  };
-
-  // Peer Evaluation: 15% of total
-  const peerTotalScore = Object.values(peerScores).reduce(
-    (sum, score) => sum + (Number(score) || 0),
-    0
-  );
-  const peerMaxScore = 5; // Each category out of 5
-  const peerTotalMaxScore = Object.keys(peerScores).length * peerMaxScore;
-  const peerPercentage =
-    peerTotalMaxScore > 0
-      ? (
-          (peerTotalScore / peerTotalMaxScore) *
-          100
-        ).toFixed(1)
-      : 0;
-
-  const handleSubmit = async () => {
-    setError("");
-    setSuccess("");
-
-    if (!me?.id) {
-      setError("User not found. Please re-login.");
-      return;
-    }
-    if (Object.values(peerScores).some((score) => score === "")) {
-      setError("Please complete all categories.");
-      return;
-    }
-
-    try {
-      const evaluationData = {
-        employeeId: me.id,
-        peerEvaluation: {
-          scores: peerScores,
-          totalScore: peerTotalScore,
-          maxScore: peerTotalMaxScore,
-          percentage: peerPercentage,
-          weight: 0.15 // 15% weight
-        },
-        comments: peerComments,
-        evaluatorId: selectedPeer,
-        evaluatedBy: "peer",
-        date: new Date().toISOString(),
-        evaluationType: "peer",
-        governmentCompliance: {
-          governmentId: "ETH-CIVIL-SERVICE-2025",
-          evaluationPeriod: new Date().getFullYear(),
-          complianceVersion: "1.0",
-          timeZone: "Africa/Addis_Ababa",
-          language: "en-US",
-          department: me?.department || "General",
-          position: me?.position || "Employee"
-        }
-      };
-
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      setTeamsLoading(true);
+      setTeamsError("");
       try {
-        await databaseService.storeEvaluation(evaluationData);
-        setSuccess(
-          `Peer evaluation submitted successfully! Score: ${peerPercentage}% (15% weight)`
-        );
-
-        // Generate peer evaluation report
-        generatePeerReport(evaluationData);
-      } catch (err) {
-        console.error('Failed to store peer evaluation:', err);
-        setError('Failed to save peer evaluation. Please try again.');
+        const data = await apiFetch("/teams/mine", { token });
+        if (!cancelled) {
+          const list = Array.isArray(data) ? data : [];
+          setMyTeams(list);
+          if (list.length === 1) {
+            setSelectedTeamId(String(list[0].id));
+          }
+        }
+        await fetchTeams?.();
+      } catch (e) {
+        if (!cancelled) {
+          setTeamsError(e.message || "Failed to load your teams");
+          setMyTeams([]);
+        }
+      } finally {
+        if (!cancelled) setTeamsLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, fetchTeams]);
 
-      // Reset form
-      setPeerScores({
-        teamwork: "",
-        communication: "",
-        problemSolving: "",
-        initiative: "",
-        reliability: "",
-        leadership: "",
-        collaboration: "",
-        timeManagement: "",
-        ethicsCompliance: "",
-        innovation: "",
-        overallContribution: ""
+  const selectedTeam = useMemo(
+    () => myTeams.find((t) => String(t.id) === String(selectedTeamId)),
+    [myTeams, selectedTeamId]
+  );
+
+  const colleagues = useMemo(
+    () => getPeerCandidatesFromTeam(selectedTeam, me?.id || userId),
+    [selectedTeam, me?.id, userId]
+  );
+
+  const selectedColleague = colleagues.find(
+    (e) => String(e.id) === String(selectedColleagueId)
+  );
+
+  const peerTotalScore = Object.values(peerScores).reduce((s, v) => s + Number(v), 0);
+  const peerMaxScore = CATEGORIES.length * 5;
+  const peerPercentage =
+    peerMaxScore > 0 ? ((peerTotalScore / peerMaxScore) * 100).toFixed(1) : 0;
+
+  const handleTeamChange = (teamId) => {
+    setSelectedTeamId(teamId);
+    setSelectedColleagueId("");
+    setError("");
+    setSuccess("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!me?.id) {
+      setError("Profile not found.");
+      return;
+    }
+    if (!selectedTeamId) {
+      setError("Select your team first.");
+      return;
+    }
+    if (!selectedColleagueId) {
+      setError("Select a team member to evaluate.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await submitPeerEvaluation({
+        employeeId: selectedColleagueId,
+        evaluatorId: me.id,
+        scores: peerScores,
+        comments: peerComments,
+        totalScore: peerTotalScore,
+        maxScore: peerMaxScore,
+        percentage: Number(peerPercentage),
       });
+      setSuccess(
+        `Peer evaluation for ${selectedColleague?.name} saved (${peerPercentage}% — 10% weight).`
+      );
+      setPeerScores(DEFAULT_SCORES);
       setPeerComments({
         strengths: "",
         areasForImprovement: "",
         collaborationNotes: "",
-        overallFeedback: ""
+        overallFeedback: "",
       });
-      setSelectedPeer("");
+      setSelectedColleagueId("");
     } catch (err) {
-      console.error("Submit error:", err);
-      setError("Failed to save peer evaluation. Please try again.");
+      setError(err.message || "Failed to save.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const generatePeerReport = (evaluationData) => {
-    const report = {
-      employeeInfo: {
-        id: evaluationData.employeeId,
-        name: me?.name || "Employee",
-        department: me?.department || "General",
-        position: me?.position || "Employee",
-        evaluationDate: evaluationData.date
-      },
-      peerEvaluation: {
-        weight: "15%",
-        score: evaluationData.peerEvaluation.percentage,
-        details: evaluationData.peerEvaluation.scores
-      },
-      comments: evaluationData.comments,
-      compliance: evaluationData.governmentCompliance
-    };
-
-    // Create downloadable text file
-    const reportContent = `
-ETHIOPIAN CIVIL SERVICE - PEER EVALUATION REPORT
-================================================
-
-EMPLOYEE INFORMATION:
-- Name: ${report.employeeInfo.name}
-- ID: ${report.employeeInfo.id}
-- Department: ${report.employeeInfo.department}
-- Position: ${report.employeeInfo.position}
-- Evaluation Date: ${new Date(report.employeeInfo.evaluationDate).toLocaleDateString()}
-
-PEER EVALUATION RESULTS:
-- Weight: ${report.peerEvaluation.weight}
-- Percentage Score: ${report.peerEvaluation.score}%
-- Total Score: ${evaluationData.peerEvaluation.totalScore}/${evaluationData.peerEvaluation.maxScore}
-
-DETAILED SCORES:
-${Object.entries(evaluationData.peerEvaluation.details).map(([key, value]) => 
-  `- ${evaluationCategories.find(cat => cat.key === key)?.label || key}: ${value}/5`
-).join('\n')}
-
-PEER COMMENTS:
-- Strengths: ${evaluationData.comments.strengths || 'Not provided'}
-- Areas for Improvement: ${evaluationData.comments.areasForImprovement || 'Not provided'}
-- Collaboration Notes: ${evaluationData.comments.collaborationNotes || 'Not provided'}
-- Overall Feedback: ${evaluationData.comments.overallFeedback || 'Not provided'}
-
-COMPLIANCE INFORMATION:
-- Government ID: ${report.compliance.governmentId}
-- Evaluation Period: ${report.compliance.evaluationPeriod}
-- Compliance Version: ${report.compliance.complianceVersion}
-- Time Zone: ${report.compliance.timeZone}
-
-================================================
-Report generated on: ${new Date().toLocaleString()}
-    `;
-
-    // Download the report
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `peer_evaluation_${report.employeeInfo.name}_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   return (
-    <div className="peer-evaluation">
-      {/* Header */}
-      <div className="header">
-        <Link to="/employee">
-          <img src="/logo.png" alt="Logo" className="form-logo" />
-        </Link>
-        <Link to="/employee" className="home-btn">
-          Back to Dashboard
-        </Link>
+    <PageShell
+      title="Peer evaluation"
+      subtitle="Select your team, then choose a teammate to evaluate (10% weight toward their efficiency score)."
+      backTo="/employee"
+    >
+      <div className="card card--flat">
+        <p style={{ margin: 0 }}>
+          <strong>Your score preview:</strong> {peerPercentage}% ({peerTotalScore} / {peerMaxScore})
+        </p>
       </div>
 
-      <h2>Peer Evaluation - 15% Weight</h2>
-
-      {/* Evaluation Summary */}
-      <div className="evaluation-summary">
-        <div className="summary-card">
-          <h3>Peer Score (15%)</h3>
-          <p className="score-display">{peerPercentage}%</p>
-          <p className="score-detail">{peerTotalScore} / {peerTotalMaxScore}</p>
-        </div>
-      </div>
-
-      {/* Employee Info */}
-      <div className="employee-info">
-        <h3>Employee Information</h3>
-        <div className="info-grid">
-          <div className="info-item">
-            <label>Name:</label>
-            <span>{me?.name || "N/A"}</span>
-          </div>
-          <div className="info-item">
-            <label>Department:</label>
-            <span>{me?.department || "N/A"}</span>
-          </div>
-          <div className="info-item">
-            <label>Position:</label>
-            <span>{me?.position || "N/A"}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Peer Selection */}
-      <div className="peer-selection">
-        <h3>Select Peer Evaluator</h3>
-        <select 
-          value={selectedPeer} 
-          onChange={(e) => setSelectedPeer(e.target.value)}
-          className="peer-select"
-        >
-          <option value="">Choose a peer evaluator...</option>
-          {peerList.map(peer => (
-            <option key={peer.id} value={peer.id}>
-              {peer.name} - {peer.department}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Peer Evaluation Form */}
-      <div className="evaluation-section">
-        <h3>Peer Assessment Categories</h3>
-        <div className="categories-grid">
-          {evaluationCategories.map((category) => (
-            <div key={category.key} className="category-card">
-              <div className="category-header">
-                <span className="category-icon">{category.icon}</span>
-                <h4>{category.label}</h4>
-              </div>
-              <p className="category-description">{category.description}</p>
-              <div className="rating-options">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <label key={rating} className="rating-label">
-                    <input
-                      type="radio"
-                      name={`peer-${category.key}`}
-                      value={rating}
-                      checked={Number(peerScores[category.key]) === rating}
-                      onChange={() => handleScoreChange(category.key, rating)}
-                    />
-                    <span className="rating-number">{rating}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Comments Section */}
-      <div className="comments-section">
-        <h3>Peer Feedback Comments</h3>
-        <div className="comments-grid">
-          <div className="comment-group">
-            <label>Strengths</label>
-            <textarea
-              value={peerComments.strengths}
-              onChange={(e) => handleCommentChange("strengths", e.target.value)}
-              placeholder="Highlight the employee's key strengths..."
-              rows={3}
-            />
-          </div>
-          <div className="comment-group">
-            <label>Areas for Improvement</label>
-            <textarea
-              value={peerComments.areasForImprovement}
-              onChange={(e) => handleCommentChange("areasForImprovement", e.target.value)}
-              placeholder="Suggest areas where improvement is needed..."
-              rows={3}
-            />
-          </div>
-          <div className="comment-group">
-            <label>Collaboration Notes</label>
-            <textarea
-              value={peerComments.collaborationNotes}
-              onChange={(e) => handleCommentChange("collaborationNotes", e.target.value)}
-              placeholder="Comments on collaboration and teamwork..."
-              rows={3}
-            />
-          </div>
-          <div className="comment-group">
-            <label>Overall Feedback</label>
-            <textarea
-              value={peerComments.overallFeedback}
-              onChange={(e) => handleCommentChange("overallFeedback", e.target.value)}
-              placeholder="Overall assessment and recommendations..."
-              rows={4}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Status Messages */}
       {success && (
-        <div className="success-message">
-          <FiCheckCircle className="status-icon" />
-          <span>{success}</span>
+        <div className="alert alert--success">
+          <FiCheckCircle /> {success}
         </div>
       )}
       {error && (
-        <div className="error-message">
-          <FiAlertTriangle className="status-icon" />
-          <span>{error}</span>
+        <div className="alert alert--error">
+          <FiAlertTriangle /> {error}
+        </div>
+      )}
+      {teamsError && (
+        <div className="alert alert--error">
+          <FiAlertTriangle /> {teamsError}
         </div>
       )}
 
-      {/* Submit Button */}
-      <div className="submit-section">
-        <button 
-          className="submit-btn" 
-          onClick={handleSubmit}
-          disabled={!selectedPeer || Object.values(peerScores).some(score => score === "")}
+      <form onSubmit={handleSubmit} className="stack">
+        <div className="card">
+          <h3 style={{ marginTop: 0, display: "flex", alignItems: "center", gap: 8 }}>
+            <FiUsers /> Your team
+          </h3>
+          {teamsLoading ? (
+            <p style={{ color: "var(--muted)", margin: 0 }}>Loading teams…</p>
+          ) : myTeams.length === 0 ? (
+            <p style={{ color: "var(--muted)", margin: 0 }}>
+              You are not assigned to any team yet. Ask an admin to add you to a team roster before
+              submitting peer evaluations.
+            </p>
+          ) : (
+            <>
+              <div className="form-field">
+                <label>Select team *</label>
+                <select
+                  value={selectedTeamId}
+                  onChange={(e) => handleTeamChange(e.target.value)}
+                  required
+                >
+                  <option value="">Choose your team…</option>
+                  {myTeams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                      {team.leader_name ? ` — Leader: ${team.leader_name}` : ""}
+                      {` (${(team.members || []).length} members)`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {selectedTeam && (
+                <div style={{ marginTop: 12, fontSize: "0.875rem", color: "var(--text-secondary)" }}>
+                  <p style={{ margin: "0 0 8px" }}>
+                    <strong>Team leader:</strong> {selectedTeam.leader_name || "Not assigned"}
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    <strong>Roster:</strong>{" "}
+                    {(selectedTeam.members || [])
+                      .map((m) => m.name)
+                      .join(", ") || "No members listed"}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {selectedTeam && (
+          <div className="card">
+            <div className="form-field">
+              <label>Select team member to evaluate *</label>
+              <select
+                value={selectedColleagueId}
+                onChange={(e) => setSelectedColleagueId(e.target.value)}
+                required
+              >
+                <option value="">Choose a colleague…</option>
+                {colleagues.map((peer) => (
+                  <option key={peer.id} value={peer.id}>
+                    {peer.name} — {peer.department || peer.position || "Team member"}
+                  </option>
+                ))}
+              </select>
+              {colleagues.length === 0 && (
+                <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 8 }}>
+                  No other members on this team to evaluate. You need at least one teammate besides
+                  yourself.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {selectedColleague && (
+          <>
+            <div className="card">
+              <h3 style={{ marginTop: 0 }}>Ratings for {selectedColleague.name}</h3>
+              {CATEGORIES.map((cat) => (
+                <div
+                  key={cat.key}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 0",
+                    borderBottom: "1px solid var(--border)",
+                    flexWrap: "wrap",
+                    gap: 8,
+                  }}
+                >
+                  <span>{cat.label}</span>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={`btn sm ${Number(peerScores[cat.key]) === n ? "primary" : ""}`}
+                        onClick={() =>
+                          setPeerScores({ ...peerScores, [cat.key]: n })
+                        }
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="card">
+              <h3 style={{ marginTop: 0 }}>Feedback</h3>
+              <div className="grid grid-2">
+                {Object.entries(peerComments).map(([key, val]) => (
+                  <div key={key} className="form-field">
+                    <label style={{ textTransform: "capitalize" }}>
+                      {key.replace(/([A-Z])/g, " $1")}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={val}
+                      onChange={(e) =>
+                        setPeerComments({ ...peerComments, [key]: e.target.value })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        <button
+          type="submit"
+          className="btn primary"
+          disabled={
+            submitting ||
+            teamsLoading ||
+            !selectedTeamId ||
+            !selectedColleagueId ||
+            colleagues.length === 0
+          }
         >
-          Submit Peer Evaluation (15%)
+          {submitting ? "Submitting…" : "Submit peer evaluation"}
         </button>
-      </div>
-    </div>
+      </form>
+    </PageShell>
   );
 }
 

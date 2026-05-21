@@ -1,171 +1,207 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "./Tasks.css";
+import React, { useState, useMemo } from "react";
 import { useData } from "../../context/DataContext";
 import { useAuth } from "../../context/AuthContext";
-import logo from "../../assets/logo.png";
+import PageShell from "../../components/layout/PageShell";
+import { filterTeamMembers } from "../../utils/evaluationHelpers";
+
+const TASK_ROWS = 6;
 
 function Tasks() {
-  const { employees } = useData();
-  const { email } = useAuth();
+  const { employees, teams, saveWorkRateEvaluation, fetchEvaluations } = useData();
+  const { userId } = useAuth();
 
-  const me = employees.find((e) => e.email === email);
-  const initialTasks = Array(6).fill().map(() => ({ task: "", percent: "", rank: "" }));
+  const roster = useMemo(
+    () => filterTeamMembers(employees, teams, userId),
+    [employees, teams, userId]
+  );
 
-  const today = new Date();
-  const formattedDate = today.toISOString().split("T")[0];
+  const emptyTasks = () =>
+    Array(TASK_ROWS)
+      .fill(null)
+      .map(() => ({ task: "", percent: "", rank: "" }));
 
-  const [employee, setEmployee] = useState({
-    id: "",
-    name: "",
-    department: "",
-    rank: "",
-    year: formattedDate
-  });
-
-  const [tasks, setTasks] = useState(initialTasks);
+  const [employeeId, setEmployeeId] = useState("");
+  const [tasks, setTasks] = useState(emptyTasks());
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const selected = roster.find((e) => String(e.id) === String(employeeId));
 
   const handleTaskChange = (index, field, value) => {
     const updated = [...tasks];
-    updated[index][field] = value;
+    updated[index] = { ...updated[index], [field]: value };
     setTasks(updated);
     setSuccess("");
     setError("");
   };
 
-  const totalScore = tasks.reduce(
-    (sum, t) => sum + ((Number(t.percent || 0) / 100) * 70 * (Number(t.rank || 0) / 4)),
+  const filledTasks = tasks.filter((t) => t.task && t.percent && t.rank);
+  const totalPercent = filledTasks.reduce((s, t) => s + Number(t.percent || 0), 0);
+  const totalScore = filledTasks.reduce(
+    (sum, t) => sum + (Number(t.percent || 0) / 100) * 70 * (Number(t.rank || 0) / 4),
     0
   );
-  const averageScore = tasks.length > 0 ? (totalScore / tasks.length).toFixed(2) : 0;
-  const totalPercent = tasks.reduce((sum, t) => sum + Number(t.percent || 0), 0);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setError("");
     setSuccess("");
-
-    if (!employee.id) {
-      setError("Please select an employee to evaluate.");
+    if (!employeeId) {
+      setError("Select a team member to evaluate.");
       return;
     }
-    if (totalPercent !== 100) {
+    if (Math.round(totalPercent) !== 100) {
       setError("Task percentages must total 100%.");
       return;
     }
-
+    if (filledTasks.length === 0) {
+      setError("Add at least one task with percent and rank.");
+      return;
+    }
     try {
-      const response = await fetch("http://localhost:5000/api/evaluations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify({
-          employee_id: employee.id,
-          evaluator_id: me.id,
-          type: "workrate",
-          tasks: tasks.filter((t) => t.task && t.percent && t.rank),
-          total_score: totalScore,
-          max_score: 70,
-          percentage: (totalScore / 70 * 100).toFixed(1),
-          date: new Date().toISOString()
-        })
+      setSubmitting(true);
+      await saveWorkRateEvaluation({
+        employeeId: Number(employeeId),
+        tasks: filledTasks,
+        totalScore,
+        maxScore: 70,
+        percentage: Number(((totalScore / 70) * 100).toFixed(1)),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save evaluation");
-      }
-
-      setSuccess(`Work Rate Evaluation submitted! Total Score: ${totalScore.toFixed(2)} / 70`);
-      setTasks(initialTasks);
-      setEmployee({ id: "", name: "", department: "", rank: "", year: formattedDate });
+      await fetchEvaluations?.();
+      setSuccess(`Work rate evaluation saved. Score: ${totalScore.toFixed(2)} / 70`);
+      setTasks(emptyTasks());
+      setEmployeeId("");
     } catch (err) {
-      console.error("Submit error:", err);
       setError(err.message || "Failed to save evaluation.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="peer-eval-form">
-      <header className="header">
-        <img src={logo} alt="logo" className="form-logo" />
-        <Link to="/leader" className="home-btn">Back to Dashboard</Link>
-      </header>
+    <PageShell
+      title="Work rate evaluation"
+      subtitle="Evaluate assigned tasks (out of 70). Task weights must total 100%. Rank each task 1–4."
+      backTo="/leader"
+      wide
+    >
+      {error && <div className="alert alert--error">{error}</div>}
+      {success && <div className="alert alert--success">{success}</div>}
 
-      <h2>ADAMA SCIENCE AND TECHNOLOGY UNIVERSITY</h2>
-      <h4>Team Leader Evaluation (Out of 70)</h4>
+      <form onSubmit={handleSubmit}>
+        <div className="card">
+          <div className="grid grid-2">
+            <div className="form-field">
+              <label>Employee *</label>
+              <select
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+                required
+              >
+                <option value="">Select team member…</option>
+                {roster.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.name} — {emp.department || "—"}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Date</label>
+              <input readOnly value={new Date().toLocaleDateString()} />
+            </div>
+          </div>
+          {selected && (
+            <p style={{ color: "var(--muted)", fontSize: "0.875rem" }}>
+              {selected.department || "No department"} · {selected.rank || selected.position || "—"}
+            </p>
+          )}
+        </div>
 
-      <div className="employee-info">
-        <label>Employee Name:
-          <select
-            value={employee.id}
-            onChange={(e) => {
-              const emp = employees.find((em) => em.id.toString() === e.target.value);
-              if (emp) {
-                setEmployee({ id: emp.id, name: emp.name, department: emp.department, rank: emp.rank, year: formattedDate });
-              }
-            }}
-          >
-            <option value="">-- Select Employee --</option>
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>{emp.name}</option>
-            ))}
-          </select>
-        </label>
-        <label>Department:<input type="text" readOnly value={employee.department} /></label>
-        <label>Rank:<input type="text" readOnly value={employee.rank} /></label>
-        <label>Date of Evaluation:<input type="text" readOnly value={employee.year} /></label>
-      </div>
-
-      <table className="task-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Recorded Tasks</th>
-            <th>Percent (%)</th>
-            <th colSpan="4">Rank (1-4)</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tasks.map((t, index) => (
-            <tr key={index}>
-              <td>{index + 1}</td>
-              <td><input type="text" value={t.task} onChange={(e) => handleTaskChange(index, "task", e.target.value)} /></td>
-              <td><input type="number" value={t.percent} onChange={(e) => handleTaskChange(index, "percent", e.target.value)} /></td>
-              {[1, 2, 3, 4].map((rank) => (
-                <td key={rank}>
-                  <input
-                    type="radio"
-                    name={`rank-${index}`}
-                    value={rank}
-                    checked={t.rank === String(rank)}
-                    onChange={(e) => handleTaskChange(index, "rank", e.target.value)}
-                  />
-                </td>
+        <div className="data-table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Task description</th>
+                <th>Weight %</th>
+                <th>Rank (1–4)</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tasks.map((t, index) => (
+                <tr key={index}>
+                  <td>{index + 1}</td>
+                  <td>
+                    <input
+                      type="text"
+                      value={t.task}
+                      placeholder="Describe the task"
+                      onChange={(e) => handleTaskChange(index, "task", e.target.value)}
+                      style={{ width: "100%" }}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={t.percent}
+                      onChange={(e) => handleTaskChange(index, "percent", e.target.value)}
+                      style={{ width: 80 }}
+                    />
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {[1, 2, 3, 4].map((rank) => (
+                        <button
+                          key={rank}
+                          type="button"
+                          className={`btn sm ${t.rank === String(rank) ? "primary" : ""}`}
+                          onClick={() => handleTaskChange(index, "rank", String(rank))}
+                        >
+                          {rank}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    {t.percent && t.rank
+                      ? ((Number(t.percent) / 100) * 70 * (Number(t.rank) / 4)).toFixed(2)
+                      : "—"}
+                  </td>
+                </tr>
               ))}
-              <td>{t.percent && t.rank ? ((Number(t.percent) / 100) * 70 * (Number(t.rank) / 4)).toFixed(2) : ""}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            </tbody>
+          </table>
+        </div>
 
-      <div className="results">
-        <label>Total Percent:<input type="text" readOnly value={totalPercent + "%"} /></label>
-        <label>Total Score (out of 70):<input type="text" readOnly value={totalScore.toFixed(2)} /></label>
-        <label>Average Score:<input type="text" readOnly value={averageScore} /></label>
-      </div>
+        <div className="card card--flat">
+          <div className="grid grid-3">
+            <div>
+              <span style={{ color: "var(--muted)", fontSize: "0.8125rem" }}>Total weight</span>
+              <p style={{ margin: "4px 0 0", fontWeight: 700 }}>{totalPercent}% / 100%</p>
+            </div>
+            <div>
+              <span style={{ color: "var(--muted)", fontSize: "0.8125rem" }}>Total score</span>
+              <p style={{ margin: "4px 0 0", fontWeight: 700 }}>{totalScore.toFixed(2)} / 70</p>
+            </div>
+            <div>
+              <span style={{ color: "var(--muted)", fontSize: "0.8125rem" }}>Percentage</span>
+              <p style={{ margin: "4px 0 0", fontWeight: 700 }}>
+                {((totalScore / 70) * 100).toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </div>
 
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      <div style={{ textAlign: "center", marginTop: 16 }}>
-        <button className="btn primary" onClick={handleSubmit}>Submit & Save</button>
-      </div>
-    </div>
+        <button type="submit" className="btn primary" disabled={submitting}>
+          {submitting ? "Saving…" : "Submit work rate evaluation"}
+        </button>
+      </form>
+    </PageShell>
   );
 }
 
