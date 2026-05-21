@@ -1,15 +1,16 @@
-// src/components/layout/Layout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
-import "./Layout.css";
 
 function Layout({ collapsed, setCollapsed }) {
   return (
-    <div className="app-layout">
+    <div className="app-shell">
       <Navbar collapsed={collapsed} setCollapsed={setCollapsed} />
-      <div className={`main-content ${collapsed ? "collapsed" : ""}`}>
-        <Outlet />
+      <div className={`app-main ${collapsed ? "is-collapsed" : ""}`}>
+        <div className="topbar-spacer" aria-hidden />
+        <main className="page-content">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

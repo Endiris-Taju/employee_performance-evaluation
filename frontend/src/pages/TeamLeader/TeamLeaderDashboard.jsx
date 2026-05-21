@@ -1,186 +1,81 @@
-// src/pages/TeamLeader/TeamLeaderDashboard.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import "./TeamLeaderDashboard.css";
+import { useNavigate } from "react-router-dom";
+import {
+  FiUsers,
+  FiLayers,
+  FiCheckSquare,
+  FiAward,
+  FiList,
+} from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useData } from "../../context/DataContext";
-import Card from "../../components/Card";
-
-function TabNav({ toggleTab, active }) {
-  return (
-    <div className="tab-nav">
-      <span
-        className={active === "overview" ? "active" : ""}
-        onClick={() => toggleTab("overview")}
-      >
-        Overview
-      </span>
-      <span
-        className={active === "calendar" ? "active" : ""}
-        onClick={() => toggleTab("calendar")}
-      >
-        Calendar
-      </span>
-      <span
-        className={active === "evaluations" ? "active" : ""}
-        onClick={() => toggleTab("evaluations")}
-      >
-        Collect All Evaluations
-      </span>
-    </div>
-  );
-}
-
-function CalendarBox() {
-  return (
-    <div className="calendar-box">
-      <h3>Evaluation Schedule</h3>
-      <div className="eval-dates">
-        <p>
-          <strong>First Round:</strong> March 15, 2025
-        </p>
-        <p>
-          <strong>Second Round:</strong> June 15, 2025
-        </p>
-      </div>
-    </div>
-  );
-}
+import EvaluationCompletion from "../../components/EvaluationCompletion";
+import PageShell from "../../components/layout/PageShell";
+import StatCard from "../../components/ui/StatCard";
+import ActionCard from "../../components/ui/ActionCard";
 
 function EvaluationsOverview({ collectedEvaluations = [], employees = [], teams = [] }) {
-  const workRateEvals = (collectedEvaluations || []).filter(e => e.type === "workrate");
-  const behavioralEvals = (collectedEvaluations || []).filter(e => e.type === "behavioral");
-  const peerEvals = (collectedEvaluations || []).filter(e => e.type === "peer");
-  const selfEvals = (collectedEvaluations || []).filter(e => e.type === "self");
+  const workRateEvals = (collectedEvaluations || []).filter((e) => e.type === "workrate");
+  const behavioralEvals = (collectedEvaluations || []).filter((e) => e.type === "behavioral");
+  const peerEvals = (collectedEvaluations || []).filter((e) => e.type === "peer");
+  const selfEvals = (collectedEvaluations || []).filter((e) => e.type === "self");
 
   const getEmployeeName = (id) => {
-    const employee = (employees || []).find(e => e.id === id);
-    return employee ? employee.name : "Unknown Employee";
+    const employee = (employees || []).find((e) => e.id === id);
+    return employee ? employee.name : "Unknown";
   };
 
   const getTeamName = (id) => {
-    const team = (teams || []).find(t => t.id === id);
-    return team ? team.name : "Unknown Team";
+    const team = (teams || []).find((t) => t.id === id);
+    return team ? team.name : "Unknown team";
   };
 
+  const sections = [
+    { title: "Work rate (out of 70)", evals: workRateEvals, max: 70 },
+    { title: "Behavioral (out of 10)", evals: behavioralEvals, max: 10 },
+    { title: "Peer (out of 15)", evals: peerEvals, max: 15 },
+    { title: "Self (out of 5)", evals: selfEvals, max: 5 },
+  ];
+
   return (
-    <div className="evaluations-overview">
-      <h2>All Collected Evaluations</h2>
-
-      {/* Work Rate Evaluations */}
-      <div className="eval-section">
-        <h3>Work Rate Evaluations (Out of 70)</h3>
-        {workRateEvals.length === 0 ? (
-          <p className="no-evals">No work rate evaluations submitted yet.</p>
-        ) : (
-          <div className="eval-list">
-            {workRateEvals.map(evaluation => (
-              <div key={evaluation.id} className="eval-item">
-                <div className="eval-header">
-                  <span className="eval-type">Work Rate</span>
-                  <span className="eval-score">{Number(evaluation.total_score || 0).toFixed(2)} / 70</span>
-                </div>
-                <div className="eval-details">
-                  <p><strong>Employee:</strong> {getEmployeeName(evaluation.employee_id)}</p>
-                  <p><strong>Date:</strong> {new Date(evaluation.date).toLocaleDateString()}</p>
-                  <p><strong>Tasks:</strong> {evaluation.tasks?.length || 0} tasks evaluated</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Behavioral Evaluations */}
-      <div className="eval-section">
-        <h3>Behavioral Evaluations (Out of 10)</h3>
-        {behavioralEvals.length === 0 ? (
-          <p className="no-evals">No behavioral evaluations submitted yet.</p>
-        ) : (
-          <div className="eval-list">
-            {behavioralEvals.map(evaluation => (
-              <div key={evaluation.id} className="eval-item">
-                <div className="eval-header">
-                  <span className="eval-type">Behavioral</span>
-                  <span className="eval-score">{Number(evaluation.total_score || 0).toFixed(2)} / 10</span>
-                </div>
-                <div className="eval-details">
-                  <p><strong>Employee:</strong> {getEmployeeName(evaluation.employee_id)}</p>
-                  <p><strong>Date:</strong> {new Date(evaluation.date).toLocaleDateString()}</p>
-                  <p><strong>Criteria:</strong> {evaluation.criteria?.length || 0} criteria evaluated</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Peer Evaluations */}
-      <div className="eval-section">
-        <h3>Peer Evaluations (Out of 15)</h3>
-        {peerEvals.length === 0 ? (
-          <p className="no-evals">No peer evaluations submitted yet.</p>
-        ) : (
-          <div className="eval-list">
-            {peerEvals.map(evaluation => (
-              <div key={evaluation.id} className="eval-item">
-                <div className="eval-header">
-                  <span className="eval-type">Peer</span>
-                  <span className="eval-score">{Number(evaluation.total_score || 0).toFixed(2)} / 15</span>
-                </div>
-                <div className="eval-details">
-                  <p><strong>From:</strong> {getEmployeeName(evaluation.from_employee_id)}</p>
-                  <p><strong>To:</strong> {getEmployeeName(evaluation.to_employee_id)}</p>
-                  <p><strong>Team:</strong> {getTeamName(evaluation.team_id)}</p>
-                  <p><strong>Date:</strong> {new Date(evaluation.date).toLocaleDateString()}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Self Evaluations */}
-      <div className="eval-section">
-        <h3>Self Evaluations (Out of 5)</h3>
-        {selfEvals.length === 0 ? (
-          <p className="no-evals">No self evaluations submitted yet.</p>
-        ) : (
-          <div className="eval-list">
-            {selfEvals.map(evaluation => (
-              <div key={evaluation.id} className="eval-item">
-                <div className="eval-header">
-                  <span className="eval-type">Self</span>
-                  <span className="eval-score">{Number(evaluation.total_score || 0).toFixed(2)} / 5</span>
-                </div>
-                <div className="eval-details">
-                  <p><strong>Employee:</strong> {getEmployeeName(evaluation.employee_id)}</p>
-                  <p><strong>Date:</strong> {new Date(evaluation.date).toLocaleDateString()}</p>
-                  <p><strong>Categories:</strong> {Object.keys(evaluation.scores || {}).length} categories</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Summary Statistics */}
-      <div className="eval-summary">
-        <h3>Evaluation Summary</h3>
-        <div className="summary-stats">
-          <div className="summary-stat"><span>Total Evaluations:</span> {collectedEvaluations.length}</div>
-          <div className="summary-stat"><span>Work Rate:</span> {workRateEvals.length}</div>
-          <div className="summary-stat"><span>Behavioral:</span> {behavioralEvals.length}</div>
-          <div className="summary-stat"><span>Peer:</span> {peerEvals.length}</div>
-          <div className="summary-stat"><span>Self:</span> {selfEvals.length}</div>
+    <div className="stack">
+      {sections.map(({ title, evals, max }) => (
+        <div key={title} className="card card--flat">
+          <h3 style={{ marginTop: 0 }}>{title}</h3>
+          {evals.length === 0 ? (
+            <p style={{ color: "var(--muted)", margin: 0 }}>No submissions yet.</p>
+          ) : (
+            <ul className="activity-list">
+              {evals.map((evaluation) => (
+                <li key={evaluation.id}>
+                  <span>
+                    {evaluation.type === "peer"
+                      ? `${getEmployeeName(evaluation.from_employee_id)} → ${getEmployeeName(evaluation.to_employee_id)}`
+                      : getEmployeeName(evaluation.employee_id)}
+                    {evaluation.team_id && ` · ${getTeamName(evaluation.team_id)}`}
+                  </span>
+                  <time>
+                    {Number(evaluation.total_score || 0).toFixed(1)} / {max} ·{" "}
+                    {new Date(evaluation.date).toLocaleDateString()}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
+      ))}
+      <div className="grid grid-4">
+        <StatCard label="Total" value={collectedEvaluations.length} />
+        <StatCard label="Work rate" value={workRateEvals.length} />
+        <StatCard label="Behavioral" value={behavioralEvals.length} />
+        <StatCard label="Peer + self" value={peerEvals.length + selfEvals.length} />
       </div>
     </div>
   );
 }
 
 const TeamLeaderDashboard = () => {
-  const { name, email, logout } = useAuth();
+  const { name } = useAuth();
   const {
     employees = [],
     teams = [],
@@ -196,7 +91,6 @@ const TeamLeaderDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Fetch fresh data on mount
   useEffect(() => {
     fetchEmployees?.();
     fetchTeams?.();
@@ -209,79 +103,93 @@ const TeamLeaderDashboard = () => {
   const totalTasks = tasks?.length || 0;
   const totalEvaluations = evaluations?.length || 0;
 
-  const pendingTasks = (tasks || []).filter((t) => t.status !== "completed");
-  const completedTasks = (tasks || []).filter((t) => t.status === "completed");
-
-  const toggleTab = (tab) => {
-    setActiveTab(activeTab === tab ? null : tab);
-  };
-
   return (
-    <div className="container" style={{ paddingTop: 24, paddingBottom: 24 }}>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Leader Dashboard</h2>
-        <p style={{ marginTop: 6, marginBottom: 0, color: "var(--muted)" }}>
-          Track tasks, submit evaluations, and review team performance.
-        </p>
-      </div>
-
-      <div className="card" style={{ marginBottom: 16 }}>
-        <TabNav toggleTab={toggleTab} active={activeTab} />
+    <PageShell
+      title="Team leader dashboard"
+      subtitle={name ? `Hello, ${name}. Manage your team and evaluations.` : "Manage your team and evaluations."}
+    >
+      <div className="tabs" role="tablist">
+        {[
+          { id: "overview", label: "Overview" },
+          { id: "calendar", label: "Schedule" },
+          { id: "evaluations", label: "All evaluations" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            className={activeTab === tab.id ? "is-active" : ""}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === "overview" && (
-        <div className="fancy-panel">
-          <h2 className="fancy-title">Overview</h2>
-          <div className="fancy-content">
-            <Card title="Employees" description={`Total: ${totalEmployees}`} />
-            <Card title="Teams" description={`Total: ${totalTeams}`} />
-            <Card title="Tasks" description={`Total: ${totalTasks}`} />
-            <Card title="Evaluations" description={`Total: ${totalEvaluations}`} />
+        <>
+          <EvaluationCompletion />
+          <div className="grid grid-4">
+            <StatCard label="Employees" value={totalEmployees} icon={FiUsers} />
+            <StatCard label="Teams" value={totalTeams} icon={FiLayers} />
+            <StatCard label="Tasks" value={totalTasks} icon={FiCheckSquare} />
+            <StatCard label="Evaluations" value={totalEvaluations} icon={FiAward} />
           </div>
-        </div>
+          <section>
+            <h2 className="section-title">Quick actions</h2>
+            <div className="grid grid-auto">
+              <ActionCard
+                title="Tasks"
+                description="Create and assign work"
+                icon={FiCheckSquare}
+                onClick={() => navigate("/leader/tasks")}
+              />
+              <ActionCard
+                title="Behavioral review"
+                description="Rate team behavior"
+                icon={FiAward}
+                onClick={() => navigate("/leader/behavioral")}
+              />
+              <ActionCard
+                title="All evaluations"
+                description="View collected submissions"
+                icon={FiList}
+                onClick={() => setActiveTab("evaluations")}
+              />
+              <ActionCard
+                title="Self evaluation"
+                description="Submit your own review"
+                icon={FiAward}
+                onClick={() => navigate("/self-evaluation")}
+              />
+            </div>
+          </section>
+        </>
       )}
 
       {activeTab === "calendar" && (
-        <div className="fancy-panel">
-          <h2 className="fancy-title">Evaluation Calendar</h2>
-          <CalendarBox />
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Evaluation schedule</h3>
+          <p style={{ margin: "8px 0" }}>
+            <strong>First round:</strong> March 15, 2025
+          </p>
+          <p style={{ margin: "8px 0 0" }}>
+            <strong>Second round:</strong> June 15, 2025
+          </p>
+          <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: 16 }}>
+            Configure cycles in admin settings when available for your org.
+          </p>
         </div>
       )}
 
       {activeTab === "evaluations" && (
-        <div className="fancy-panel">
-          <EvaluationsOverview
-            collectedEvaluations={collectedEvaluations}
-            employees={employees}
-            teams={teams}
-          />
-        </div>
+        <EvaluationsOverview
+          collectedEvaluations={collectedEvaluations}
+          employees={employees}
+          teams={teams}
+        />
       )}
-
-      {/* Extra Quick Actions */}
-      <div className="dashboard-container">
-        <div className="dashboard-panels">
-          <div className="card">
-            <h3>Work Rate Evaluation (out of 70)</h3>
-            <button className="btn" onClick={() => navigate("/leader/tasks")}>
-              Create Task
-            </button>
-          </div>
-          <div className="card">
-            <h3>Behavioral Evaluation (out of 10)</h3>
-            <button className="btn" onClick={() => navigate("/leader/behavioral")}>
-              Evaluation
-            </button>
-          </div>
-          <div className="card">
-            <h3>Collected Evaluations</h3>
-            <button className="btn primary" onClick={() => setActiveTab("evaluations")}>
-              See All
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </PageShell>
   );
 };
 

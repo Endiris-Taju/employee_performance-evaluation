@@ -1,39 +1,36 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "./SelfEvaluation.css";
 import { useData } from "../../context/DataContext";
 import { useAuth } from "../../context/AuthContext";
-import databaseService from "../../services/DatabaseService";
+import PageShell from "../../components/layout/PageShell";
+
+const CATEGORIES = [
+  { key: "workQuality", label: "Work quality" },
+  { key: "communication", label: "Communication" },
+  { key: "teamwork", label: "Teamwork" },
+  { key: "problemSolving", label: "Problem solving" },
+  { key: "initiative", label: "Initiative" },
+  { key: "adaptability", label: "Adaptability" },
+  { key: "leadership", label: "Leadership" },
+  { key: "timeManagement", label: "Time management" },
+  { key: "ethicsCompliance", label: "Ethics & compliance" },
+  { key: "serviceDelivery", label: "Service delivery" },
+  { key: "innovation", label: "Innovation" },
+];
+
+const DEFAULT_SCORES = Object.fromEntries(CATEGORIES.map((c) => [c.key, 3]));
 
 function SelfEvaluation() {
-  const { employees } = useData();
-  const { email } = useAuth();
+  const { employees, saveSelfEvaluation } = useData();
+  const { email, userId, role } = useAuth();
 
-  const me = employees.find((e) => e.email === email);
-
-  const today = new Date();
-  const formattedDate = today.toISOString().split("T")[0];
+  const me =
+    employees.find((e) => e.email === email) ||
+    employees.find((e) => String(e.id) === String(userId));
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-
-  // ⭐ SELF SCORES
-  const [scores, setScores] = useState({
-    workQuality: 4,
-    communication: 3,
-    teamwork: 4,
-    problemSolving: 3,
-    initiative: 4,
-    adaptability: 3,
-    leadership: 3,
-    timeManagement: 4,
-    ethicsCompliance: 4,
-    serviceDelivery: 3,
-    innovation: 3,
-  });
-
-  // ⭐ COMMENTS
+  const [scores, setScores] = useState(DEFAULT_SCORES);
   const [comments, setComments] = useState({
     achievements: "",
     challenges: "",
@@ -42,155 +39,125 @@ function SelfEvaluation() {
     suggestions: "",
   });
 
-  // ⭐ CALCULATE SELF %
-  const calculateSelfPercentage = () => {
-    const total = Object.values(scores).reduce((a, b) => a + Number(b), 0);
-    const max = Object.keys(scores).length * 5;
-    return ((total / max) * 100).toFixed(1);
-  };
+  const totalScore = Object.values(scores).reduce((a, b) => a + Number(b), 0);
+  const maxScore = CATEGORIES.length * 5;
+  const selfPercentage = maxScore > 0 ? ((totalScore / maxScore) * 100).toFixed(1) : 0;
 
-  const selfPercentage = calculateSelfPercentage();
+  const backPath =
+    role === "admin" ? "/admin" : role === "leader" ? "/leader" : "/employee";
 
-  const handleScoreChange = (key, value) => {
-    setScores({ ...scores, [key]: value });
-  };
-
-  const handleCommentChange = (key, value) => {
-    setComments({ ...comments, [key]: value });
-  };
-
-  // ⭐ SUBMIT EVALUATION
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!me?.id) {
+      setError("Profile not found. Please sign in again.");
+      return;
+    }
     try {
       setLoading(true);
       setError("");
-      setSuccess("");
-
-      const evaluation = {
+      await saveSelfEvaluation({
         employeeId: me.id,
-        employeeName: me.name,
-        department: me.department,
-        selfScores: scores,
+        scores,
         comments,
-        selfPercentage,
-        createdAt: new Date().toISOString(),
-      };
-
-      console.log("Sending evaluation:", evaluation);
-
-      await databaseService.storeEvaluation(evaluation);
-
-      setSuccess("✅ Evaluation submitted successfully!");
+        totalScore,
+        maxScore,
+        percentage: Number(selfPercentage),
+      });
+      setSuccess("Self evaluation submitted successfully.");
     } catch (err) {
-      console.error(err);
-      setError("❌ Failed to submit evaluation");
+      setError(err.message || "Failed to submit");
     } finally {
       setLoading(false);
     }
   };
 
-  const categories = [
-    { key: "workQuality", label: "Work Quality" },
-    { key: "communication", label: "Communication" },
-    { key: "teamwork", label: "Teamwork" },
-    { key: "problemSolving", label: "Problem Solving" },
-    { key: "initiative", label: "Initiative" },
-    { key: "adaptability", label: "Adaptability" },
-    { key: "leadership", label: "Leadership" },
-    { key: "timeManagement", label: "Time Management" },
-    { key: "ethicsCompliance", label: "Ethics & Compliance" },
-    { key: "serviceDelivery", label: "Service Delivery" },
-    { key: "innovation", label: "Innovation" },
-  ];
-
   return (
-    <div className="self-evaluation">
-      <header className="header">
-        <Link to="/employee" className="home-btn">⬅ Back</Link>
-      </header>
-
-      <h2>Employee Self Evaluation</h2>
-
-      <div className="employee-info">
-        <input readOnly value={me?.department || ""} />
-        <input readOnly value={me?.rank || ""} />
-        <input readOnly value={formattedDate} />
+    <PageShell
+      title="Self evaluation"
+      subtitle="Rate yourself on each category (1–5). Contributes 5% to your overall efficiency score."
+      backTo={backPath}
+    >
+      <div className="card card--flat">
+        <div className="grid grid-3">
+          <div>
+            <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Name</span>
+            <p style={{ margin: "4px 0 0", fontWeight: 600 }}>{me?.name || "—"}</p>
+          </div>
+          <div>
+            <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Department</span>
+            <p style={{ margin: "4px 0 0", fontWeight: 600 }}>{me?.department || "—"}</p>
+          </div>
+          <div>
+            <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Date</span>
+            <p style={{ margin: "4px 0 0", fontWeight: 600 }}>
+              {new Date().toLocaleDateString()}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* ⭐ SELF SCORES TABLE */}
-      <h3>Self Evaluation (1–5)</h3>
-      
-      <div className="evaluation-table-container">
-        <table className="evaluation-table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>1</th>
-              <th>2</th>
-              <th>3</th>
-              <th>4</th>
-              <th>5</th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((c) => (
-              <tr key={c.key}>
-                <td className="category-label">
-                  <label>{c.label}</label>
-                </td>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <td key={n} className="rating-cell">
+      {error && <div className="alert alert--error">{error}</div>}
+      {success && <div className="alert alert--success">{success}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Ratings (1 = low, 5 = high)</h3>
+          <div className="stack">
+            {CATEGORIES.map((c) => (
+              <div
+                key={c.key}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 16,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span style={{ fontWeight: 500, minWidth: 160 }}>{c.label}</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[1, 2, 3, 4, 5].map((n) => (
                     <button
+                      key={n}
                       type="button"
-                      onClick={() => handleScoreChange(c.key, n)}
-                      className={`rating-btn ${scores[c.key] === n ? "selected" : ""}`}
+                      className={`btn sm ${scores[c.key] === n ? "primary" : ""}`}
+                      onClick={() => setScores({ ...scores, [c.key]: n })}
                     >
                       {n}
                     </button>
-                  </td>
-                ))}
-              </tr>
+                  ))}
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Comments</h3>
-
-      {/* Enhanced Comments Section */}
-      <div className="enhanced-comments-section">
-        <h3>Evaluation Comments</h3>
-        <p className="comments-description">Please provide detailed comments for each section below:</p>
-        
-        <div className="comments-grid">
-          {Object.entries(comments).map(([type, content]) => (
-            <div key={type} className="comment-item">
-              <label className="comment-label">
-                {type.charAt(0).toUpperCase() + type.slice(1).replace(/([A-Z])/g, ' $1')}
-              </label>
-              <textarea
-                className="comment-textarea"
-                placeholder={`Enter ${type.replace(/([A-Z])/g, ' $1').toLowerCase()} here...`}
-                value={content}
-                onChange={(e) => handleCommentChange(type, e.target.value)}
-                rows={4}
-              />
-            </div>
-          ))}
+          </div>
+          <p style={{ marginTop: 16, fontSize: "1.125rem" }}>
+            Score: <strong>{selfPercentage}%</strong> ({totalScore} / {maxScore}) · 5% weight
+          </p>
         </div>
 
-        <div className="final-score">
-          <h2>Final Self Evaluation Score: {selfPercentage}% (Weighted: {(selfPercentage * 0.05).toFixed(2)}%)</h2>
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Comments</h3>
+          <div className="grid grid-2">
+            {Object.entries(comments).map(([key, val]) => (
+              <div key={key} className="form-field">
+                <label style={{ textTransform: "capitalize" }}>
+                  {key.replace(/([A-Z])/g, " $1")}
+                </label>
+                <textarea
+                  rows={3}
+                  value={val}
+                  onChange={(e) => setComments({ ...comments, [key]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
-        <button className="btn primary" onClick={handleSubmit}>
-          {loading ? "Submitting..." : "Submit Self Evaluation"}
+        <button type="submit" className="btn primary" disabled={loading}>
+          {loading ? "Submitting…" : "Submit self evaluation"}
         </button>
-
-        {success && <p className="success">{success}</p>}
-        {error && <p className="error">{error}</p>}
-      </div>
-      </div>
+      </form>
+    </PageShell>
   );
 }
 

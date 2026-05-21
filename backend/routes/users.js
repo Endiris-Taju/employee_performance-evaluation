@@ -22,10 +22,16 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/users/:id - get specific user
+// GET /api/users/:id - get specific user (self or admin)
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
+    if (
+      req.user?.role !== "admin" &&
+      Number(id) !== Number(req.user?.id)
+    ) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
     const result = await pool.query(
       "SELECT id, email, role, name, department, rank, employee_id, phone, position, created_at FROM users WHERE id = $1",
       [id]

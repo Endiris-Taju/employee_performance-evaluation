@@ -1,44 +1,88 @@
 // src/pages/Admin/Analytics.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { FiTrendingUp, FiTrendingDown, FiUsers, FiCalendar, FiAward, FiActivity, FiClock, FiTarget, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import { useAuth } from "../../context/AuthContext";
 import "./Analytics.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+const EMPTY_ANALYTICS = {
+  overview: {
+    totalEmployees: 0,
+    activeToday: 0,
+    averagePerformance: 0,
+    complianceRate: 0,
+  },
+  performance: {
+    excellent: 0,
+    good: 0,
+    satisfactory: 0,
+    needsImprovement: 0,
+  },
+  attendance: {
+    presentRate: 0,
+    absentRate: 0,
+    lateRate: 0,
+    averageWorkHours: 0,
+  },
+  departments: [],
+};
+
 function Analytics() {
+  const { token } = useAuth();
   const [timeRange, setTimeRange] = useState("month");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
-  const [analyticsData, setAnalyticsData] = useState({
-    overview: {
-      totalEmployees: 156,
-      activeToday: 142,
-      averagePerformance: 85.3,
-      complianceRate: 92.7
-    },
-    performance: {
-      excellent: 45,
-      good: 78,
-      satisfactory: 28,
-      needsImprovement: 5
-    },
-    attendance: {
-      presentRate: 94.2,
-      absentRate: 3.8,
-      lateRate: 2.0,
-      averageWorkHours: 7.8
-    },
-    departments: [
-      { name: "ህግደፍት - Human Resources", employees: 25, performance: 88.5, attendance: 95.2 },
-      { name: "ፋይናንስ - Finance", employees: 18, performance: 91.2, attendance: 96.1 },
-      { name: "ቴክኖሎጂ - Technology", employees: 32, performance: 86.8, attendance: 93.5 },
-      { name: "አስተማማኝት - Operations", employees: 41, performance: 84.1, attendance: 94.8 },
-      { name: "ህግ - Legal", employees: 12, performance: 89.3, attendance: 97.2 },
-      { name: "አስተምህርት - Education", employees: 28, performance: 87.6, attendance: 92.9 }
-    ],
-    trends: {
-      monthlyPerformance: [82, 84, 83, 85, 87, 86, 88, 85, 87, 89, 88, 85.3],
-      monthlyAttendance: [92, 93, 91, 94, 93, 95, 94, 93, 94, 95, 94, 94.2],
-      employeeGrowth: [140, 142, 145, 148, 150, 152, 153, 154, 155, 156, 156, 156]
-    }
-  });
+  const [analyticsData, setAnalyticsData] = useState(EMPTY_ANALYTICS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const headers = useMemo(
+    () => ({
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+    [token]
+  );
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const res = await fetch(`${API_URL}/analytics/overview?range=${timeRange}`, {
+          headers,
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || "Failed to load analytics");
+        if (!cancelled) {
+          setAnalyticsData({
+            overview: json.overview || EMPTY_ANALYTICS.overview,
+            performance: json.performance || EMPTY_ANALYTICS.performance,
+            attendance: {
+              presentRate: json.attendance?.presentRate ?? 0,
+              absentRate: Math.max(
+                0,
+                100 - (json.attendance?.presentRate ?? 0)
+              ),
+              lateRate: 0,
+              averageWorkHours: 8,
+            },
+            departments: json.departments || [],
+          });
+        }
+      } catch (e) {
+        if (!cancelled) setError(e.message || "Failed to load analytics");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, timeRange, headers]);
 
   const months = ["ጥር", "የካቲት", "መጋቢት", "ሚያዝያ", "ግንቦት", "ሰኔ", "ሐምሌ", "ነሐሴ", "መስከረም", "ጥቅምት", "ህዳር", "ታህሳስ"];
 
@@ -89,8 +133,21 @@ function Analytics() {
     </div>
   );
 
+  const filteredDepartments =
+    selectedDepartment === "all"
+      ? analyticsData.departments
+      : analyticsData.departments.filter((d) => d.name === selectedDepartment);
+
   return (
     <div className="analytics-container">
+      {error && (
+        <div className="status-message error" style={{ marginBottom: 16 }}>
+          {error}
+        </div>
+      )}
+      {loading && (
+        <p style={{ color: "var(--muted)", marginBottom: 16 }}>Loading live analytics…</p>
+      )}
       {/* Header */}
       <div className="analytics-header">
         <div className="header-content">
@@ -215,7 +272,7 @@ function Analytics() {
       <div className="departments-section">
         <h2 className="section-title">የስራ ቦታዎች - Departments</h2>
         <div className="departments-grid">
-          {analyticsData.departments.map((department, index) => (
+          {filteredDepartments.map((department, index) => (
             <DepartmentCard key={index} department={department} />
           ))}
         </div>

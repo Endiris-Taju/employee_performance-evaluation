@@ -1,10 +1,13 @@
 // src/pages/Admin/EmployeeList.jsx
 import React, { useState } from "react";
-import "./EmployeeList.css";
+import { useNavigate } from "react-router-dom";
+import { FiUserPlus } from "react-icons/fi";
 import { useData } from "../../context/DataContext";
 import Modal from "../../components/ui/Modal";
+import PageShell from "../../components/layout/PageShell";
 
 function EmployeeList() {
+  const navigate = useNavigate();
   const { employees, updateEmployee, deleteEmployee } = useData();
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -52,10 +55,18 @@ function EmployeeList() {
   };
 
   return (
-    <div className="employee-list-page">
-      <h1>Employee List</h1>
-
-      <table className="employee-table">
+    <PageShell
+      title="Employees"
+      subtitle="Manage staff records, roles, and contact details."
+      actions={
+        <button type="button" className="btn primary" onClick={() => navigate("/addEmployee")}>
+          <FiUserPlus /> Add employee
+        </button>
+      }
+      wide
+    >
+      <div className="data-table-wrap">
+      <table className="data-table">
         <thead>
           <tr>
             <th>Employee ID</th>
@@ -90,11 +101,13 @@ function EmployeeList() {
                 />
               </td>
               <td>
-                <button className="btn small" onClick={() => startEdit(emp)}>
+                <button type="button" className="btn sm" onClick={() => startEdit(emp)}>
                   Edit
-                </button>
+                </button>{" "}
                 <button
-                  className="btn small danger"
+                  type="button"
+                  className="btn sm"
+                  style={{ color: "var(--danger)", borderColor: "var(--danger)" }}
                   onClick={() => confirmDelete(emp)}
                 >
                   Delete
@@ -104,6 +117,7 @@ function EmployeeList() {
           ))}
         </tbody>
       </table>
+      </div>
 
       {/* Edit Modal */}
       <Modal
@@ -196,7 +210,7 @@ function EmployeeList() {
           )}
         </div>
       </Modal>
-    </div>
+    </PageShell>
   );
 }
 

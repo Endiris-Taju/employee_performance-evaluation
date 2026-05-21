@@ -1,93 +1,182 @@
-// src/pages/AllEvaluations.jsx
-import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
-import "./AllEvaluations.css";
+import React, { useMemo, useState } from "react";
 import { useData } from "../../context/DataContext";
+import { useAuth } from "../../context/AuthContext";
+import PageShell from "../../components/layout/PageShell";
+import EvaluationDetailCard from "../../components/EvaluationDetailCard";
+import {
+  aggregateByEmployee,
+  exportEvaluationsCsv,
+  formatEvalType,
+  getEmployeeName,
+  getEvaluatorName,
+  filterTeamMembers,
+} from "../../utils/evaluationHelpers";
 
 function AllEvaluations() {
-  const { employees, evaluations } = useData();
+  const { employees, evaluations, teams } = useData();
+  const { role, userId } = useAuth();
+  const [filterType, setFilterType] = useState("all");
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState("summary");
 
-  const results = useMemo(() => {
-    const grouped = {};
+  const roster =
+    role === "leader" ? filterTeamMembers(employees, teams, userId) : employees;
 
-    evaluations.forEach((ev) => {
-      ev.submissions?.forEach((s) => {
-        const empId = s.aboutMemberId;
-        if (!grouped[empId]) {
-          const emp = employees.find((e) => e.id === empId);
-          grouped[empId] = {
-            id: emp?.id,
-            name: emp?.name,
-            department: emp?.department,
-            self: 0,
-            manager: 0,
-            leader: 0,
-            peer: 0,
-          };
-        }
+  const scopedEvaluations = useMemo(() => {
+    if (role !== "leader") return evaluations;
+    const ids = new Set(roster.map((e) => Number(e.id)));
+    return evaluations.filter((ev) => ids.has(Number(ev.employee_id)));
+  }, [evaluations, role, roster]);
 
-        if (ev.type === "behavioral") {
-          const from = employees.find((e) => e.id === s.fromMemberId);
+  const summary = useMemo(
+    () => aggregateByEmployee(scopedEvaluations, employees),
+    [scopedEvaluations, employees]
+  );
 
-          if (from?.role === "manager") {
-            grouped[empId].manager += s.answers.reduce((sum, a) => sum + a.score, 0);
-          } else if (from?.role === "leader") {
-            // ✅ show submitted total score (out of 70)
-            grouped[empId].leader += s.score ?? 0;
-          } else if (empId === s.fromMemberId) {
-            grouped[empId].self += s.answers.reduce((sum, a) => sum + a.score, 0);
-          }
-        } else if (ev.type === "team") {
-          grouped[empId].peer += s.score || 0;
-        }
-      });
+  const filteredList = useMemo(() => {
+    return scopedEvaluations.filter((ev) => {
+      const matchType = filterType === "all" || ev.type === filterType;
+      const name = getEmployeeName(employees, ev.employee_id).toLowerCase();
+      const matchSearch =
+        !search ||
+        name.includes(search.toLowerCase()) ||
+        String(ev.type).includes(search.toLowerCase());
+      return matchType && matchSearch;
     });
+  }, [scopedEvaluations, filterType, search, employees]);
 
-    return Object.values(grouped);
-  }, [evaluations, employees]);
+  const backPath = role === "admin" ? "/admin" : "/leader";
+
+  const handleExport = () => {
+    exportEvaluationsCsv(
+      filteredList.map((ev) => ({
+        employeeName: getEmployeeName(employees, ev.employee_id),
+        type: ev.type,
+        total_score: ev.total_score,
+        max_score: ev.max_score,
+        percentage: ev.percentage,
+        date: ev.date,
+        evaluatorName: getEvaluatorName(employees, ev),
+      })),
+      `evaluations_${new Date().toISOString().split("T")[0]}.csv`
+    );
+  };
 
   return (
-    <div className="all-evaluations">
-      <header className="header">
-        <img src="/src/assets/logo.png" alt="logo" className="form-logo" />
-        <Link to="/leader/dashboard" className="home-btn">
-          Back to Dashboard
-        </Link>
-      </header>
+    <PageShell
+      title="Evaluations"
+      subtitle="Review all submitted evaluations. Summary shows latest score per type per employee."
+      backTo={backPath}
+      actions={
+        <button type="button" className="btn" onClick={handleExport}>
+          Export CSV
+        </button>
+      }
+      wide
+    >
+      <div className="tabs">
+        <button
+          type="button"
+          className={view === "summary" ? "is-active" : ""}
+          onClick={() => setView("summary")}
+        >
+          Summary
+        </button>
+        <button
+          type="button"
+          className={view === "detail" ? "is-active" : ""}
+          onClick={() => setView("detail")}
+        >
+          All submissions ({scopedEvaluations.length})
+        </button>
+      </div>
 
-      <h2>ADAMA SCIENCE AND TECHNOLOGY UNIVERSITY</h2>
-      <h3>📑 Collected Evaluations Report</h3>
+      <div className="card card--flat">
+        <div className="grid grid-3">
+          <div className="form-field">
+            <label>Type</label>
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <option value="all">All types</option>
+              <option value="self">Self</option>
+              <option value="peer">Peer</option>
+              <option value="behavioral">Behavioral</option>
+              <option value="workrate">Work rate</option>
+            </select>
+          </div>
+          <div className="form-field" style={{ gridColumn: "span 2" }}>
+            <label>Search</label>
+            <input
+              placeholder="Employee name or type…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
 
-      <table className="evaluation-table">
-        <thead>
-          <tr>
-            <th>Employee Name</th>
-            <th>Department</th>
-            <th>Self (5)</th>
-            <th>Manager (10)</th>
-            <th>Leader (70)</th>
-            <th>Peer/Team (15)</th>
-            <th>Total (100)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {results.map((r) => {
-            const total = r.self + r.manager + r.leader + r.peer;
-            return (
-              <tr key={r.id}>
-                <td>{r.name}</td>
-                <td>{r.department}</td>
-                <td>{r.self.toFixed(2)}</td>
-                <td>{r.manager.toFixed(2)}</td>
-                <td>{r.leader.toFixed(2)}</td>
-                <td>{r.peer.toFixed(2)}</td>
-                <td><strong>{total.toFixed(2)}</strong></td>
+      {view === "summary" && (
+        <div className="data-table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Self (5%)</th>
+                <th>Peer (10%)</th>
+                <th>Leader (15%)</th>
+                <th>Work (70%)</th>
+                <th>Est. efficiency</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+            </thead>
+            <tbody>
+              {summary.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ color: "var(--muted)" }}>
+                    No evaluations found.
+                  </td>
+                </tr>
+              ) : (
+                summary.map((row) => (
+                  <tr key={row.employeeId}>
+                    <td>{row.name}</td>
+                    <td>{row.department}</td>
+                    <td>{row.self ? `${Number(row.self.percentage || 0).toFixed(0)}%` : "—"}</td>
+                    <td>{row.peer ? `${Number(row.peer.percentage || 0).toFixed(0)}%` : "—"}</td>
+                    <td>
+                      {row.behavioral
+                        ? `${Number(row.behavioral.percentage || 0).toFixed(0)}%`
+                        : "—"}
+                    </td>
+                    <td>
+                      {row.workrate ? `${Number(row.workrate.percentage || 0).toFixed(0)}%` : "—"}
+                    </td>
+                    <td>
+                      <strong>{row.efficiencyEstimate}%</strong>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {view === "detail" && (
+        <div>
+          {filteredList.length === 0 ? (
+            <p style={{ color: "var(--muted)" }}>No evaluations match your filters.</p>
+          ) : (
+            filteredList.map((ev) => (
+              <EvaluationDetailCard
+                key={ev.id}
+                evaluation={ev}
+                employees={employees}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </PageShell>
   );
 }
 

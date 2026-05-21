@@ -13,6 +13,10 @@ import pool from "./db.js";
 import attendanceRoutes from "./routes/attendance.js";
 import { ensureSchema } from "./dbInit.js";
 import efficiencyRoutes from "./routes/efficiency.js";
+import cyclesRoutes from "./routes/cycles.js";
+import analyticsRoutes from "./routes/analytics.js";
+import notificationsRoutes from "./routes/notifications.js";
+import auditRoutes from "./routes/audit.js";
 
 dotenv.config();
 const app = express();
@@ -50,6 +54,10 @@ app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/efficiency", efficiencyRoutes);
+app.use("/api/cycles", cyclesRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/notifications", notificationsRoutes);
+app.use("/api/audit", auditRoutes);
 
 // 404 fallback
 app.use((req, res) => res.status(404).json({ message: "Route not found" }));

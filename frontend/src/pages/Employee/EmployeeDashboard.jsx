@@ -1,147 +1,147 @@
-import React, { useState, useEffect } from "react";
-import "./EmployeeDashboard.css";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  FiAward,
+  FiCamera,
+  FiZap,
+  FiFileText,
+  FiUsers,
+} from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useData } from "../../context/DataContext";
-import databaseService from "../../services/DatabaseService";
+import EvaluationCompletion from "../../components/EvaluationCompletion";
+import PageShell from "../../components/layout/PageShell";
+import StatCard from "../../components/ui/StatCard";
+import ActionCard from "../../components/ui/ActionCard";
 
-function Card({ title, actionText, onClick }) {
-  return (
-    <div className="card">
-      <h3>{title}</h3>
-      <button className="btn primary" onClick={onClick}>
-        {actionText}
-      </button>
-    </div>
-  );
-}
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function EmployeeDashboard() {
-  const { email, name } = useAuth();
-  const { employees = [] } = useData();
+  const { email, name, userId, token } = useAuth();
+  const { employees = [], evaluations = [] } = useData();
   const navigate = useNavigate();
+
+  const headers = useMemo(
+    () => ({
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    }),
+    [token]
+  );
+
+  const me =
+    employees.find((e) => e.email === email) ||
+    employees.find((e) => String(e.id) === String(userId));
+
   const [myStats, setMyStats] = useState({
     evaluationScore: 0,
-    attendanceCount: 0,
-    reportsCount: 0,
-    lastActivity: "No recent activity"
+    attendanceToday: false,
+    efficiency: null,
   });
   const [loading, setLoading] = useState(true);
 
-  // Try to find employee by email, or use auth context data
-  const me = employees.find((e) => e.email === email) || {
-    id: 1, // fallback ID
-    name: name || email?.split('@')[0] || 'Employee',
-    email: email || '',
-    department: 'Unknown',
-    rank: 'Employee',
-    employee_id: 'N/A',
-    phone: 'N/A',
-    position: 'N/A'
-  };
-
   useEffect(() => {
+    if (!me?.id) return;
     fetchEmployeeData();
-  }, [me.id]);
+  }, [me?.id, evaluations, token]);
 
   const fetchEmployeeData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch employee's evaluations
-      const evaluations = await databaseService.getEvaluations(me.id);
-      const latestEvaluation = evaluations?.[evaluations.length - 1];
-      const evaluationScore = latestEvaluation?.selfPercentage || latestEvaluation?.percentage || 0;
-      
-      // Fetch attendance records
-      const today = new Date().toISOString().split('T')[0];
-      const attendanceRecords = await databaseService.getAttendance(me.id, {
-        start: today,
-        end: today
-      });
-      const attendanceCount = attendanceRecords?.length || 0;
-      
-      // Fetch reports
-      const reports = await databaseService.getReports(me.id);
-      const reportsCount = reports?.length || 0;
-      
-      // Determine last activity
-      const lastEvalTime = latestEvaluation?.createdAt;
-      const lastAttendanceTime = attendanceRecords?.[attendanceRecords.length - 1]?.createdAt;
-      const lastReportTime = reports?.[reports.length - 1]?.createdAt;
-      
-      const timestamps = [lastEvalTime, lastAttendanceTime, lastReportTime].filter(Boolean);
-      const lastActivity = timestamps.length > 0 
-        ? new Date(Math.max(...timestamps.map(t => new Date(t).getTime()))).toLocaleString()
-        : "No recent activity";
 
-      setMyStats({
-        evaluationScore,
-        attendanceCount,
-        reportsCount,
-        lastActivity
-      });
+      const selfEval = [...(evaluations || [])]
+        .filter((e) => e.type === "self")
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      const evaluationScore = Number(selfEval?.percentage || 0);
+
+      const today = new Date().toISOString().split("T")[0];
+      const attRes = await fetch(`${API_URL}/attendance/me?date=${today}`, { headers });
+      const attLogs = attRes.ok ? await attRes.json() : [];
+      const attendanceToday = (Array.isArray(attLogs) ? attLogs : []).some(
+        (r) => r.event_type === "checkin"
+      );
+
+      let efficiency = null;
+      const effRes = await fetch(`${API_URL}/efficiency/employee/${me.id}`, { headers });
+      if (effRes.ok) {
+        efficiency = await effRes.json();
+      }
+
+      setMyStats({ evaluationScore, attendanceToday, efficiency });
     } catch (error) {
-      console.error('Employee dashboard data fetch error:', error);
+      console.error("Employee dashboard data fetch error:", error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container" style={{ paddingTop: 24, paddingBottom: 24 }}>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Employee Dashboard</h2>
-        <p style={{ marginTop: 6, marginBottom: 0, color: "var(--muted)" }}>
-          Welcome, {me.name}.
-        </p>
+    <PageShell
+      title={`Welcome, ${me?.name || name || "there"}`}
+      subtitle="Your evaluations, attendance, and performance at a glance."
+    >
+      <div className="grid grid-3">
+        <StatCard
+          label="Latest self-evaluation"
+          value={loading ? "…" : `${myStats.evaluationScore}%`}
+          icon={FiAward}
+        />
+        <StatCard
+          label="Today's attendance"
+          value={loading ? "…" : myStats.attendanceToday ? "Present" : "Not marked"}
+          icon={FiCamera}
+          variant={myStats.attendanceToday ? "success" : "warning"}
+        />
+        <StatCard
+          label="Overall efficiency"
+          value={
+            loading
+              ? "…"
+              : myStats.efficiency
+                ? `${myStats.efficiency.efficiency_percent}%`
+                : "—"
+          }
+          icon={FiZap}
+        />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-auto" style={{ marginBottom: 16 }}>
-        <div className="card">
-          <h4>Latest Evaluation Score</h4>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>
-            {loading ? "..." : `${myStats.evaluationScore}%`}
-          </p>
-        </div>
-        <div className="card">
-          <h4>Today's Attendance</h4>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--success)' }}>
-            {loading ? "..." : myStats.attendanceCount > 0 ? "✓ Present" : "Not marked"}
-          </p>
-        </div>
-        <div className="card">
-          <h4>Reports Generated</h4>
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--info)' }}>
-            {loading ? "..." : myStats.reportsCount}
-          </p>
-        </div>
-        <div className="card">
-          <h4>Last Activity</h4>
-          <p style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
-            {loading ? "..." : myStats.lastActivity}
-          </p>
-        </div>
-      </div>
+      <EvaluationCompletion />
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <section>
+        <h2 className="section-title">What would you like to do?</h2>
         <div className="grid grid-auto">
-          <div><strong>Employee ID:</strong> {me.employee_id || "N/A"}</div>
-          <div><strong>Email:</strong> {me.email}</div>
-          <div><strong>Department:</strong> {me.department || "N/A"}</div>
-          <div><strong>Position:</strong> {me.position || "N/A"}</div>
-          <div><strong>Phone:</strong> {me.phone || "N/A"}</div>
-          <div><strong>Rank:</strong> {me.rank || "N/A"}</div>
+          <ActionCard
+            title="Self evaluation"
+            description="Rate your own performance"
+            icon={FiAward}
+            onClick={() => navigate("/self-evaluation")}
+          />
+          <ActionCard
+            title="Peer evaluation"
+            description="Evaluate a colleague"
+            icon={FiUsers}
+            onClick={() => navigate("/peerEvaluation")}
+          />
+          <ActionCard
+            title="Attendance"
+            description="Mark check-in or check-out"
+            icon={FiCamera}
+            onClick={() => navigate("/attendance")}
+          />
+          <ActionCard
+            title="My efficiency"
+            description="View your efficiency score"
+            icon={FiZap}
+            onClick={() => navigate("/efficiency")}
+          />
+          <ActionCard
+            title="My reports"
+            description="Download or view reports"
+            icon={FiFileText}
+            onClick={() => navigate("/my-reports")}
+          />
         </div>
-      </div>
-
-      <div className="grid grid-auto">
-        <Card title="Self Evaluation" actionText="Start" onClick={() => navigate("/self-evaluation")} />
-        <Card title="Peer Evaluation" actionText="Evaluate" onClick={() => navigate("/peerEvaluation")} />
-        <Card title="My Reports" actionText="Open" onClick={() => navigate("/my-reports")} />
-      </div>
-    </div>
+      </section>
+    </PageShell>
   );
 }
 

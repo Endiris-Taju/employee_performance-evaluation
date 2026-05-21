@@ -85,9 +85,32 @@ export const AuthProvider = ({ children }) => {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
   }, []);
 
+  const setProfileFromUser = useCallback((user) => {
+    if (!user) return;
+    if (user.name) {
+      setName(user.name);
+      localStorage.setItem("name", user.name);
+    }
+    if (user.email) {
+      setEmail(user.email);
+      localStorage.setItem("email", user.email);
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ token, userId, role, email, name, theme, login, logout, toggleTheme }),
-    [token, userId, role, email, name, theme, login, logout, toggleTheme]
+    () => ({
+      token,
+      userId,
+      role,
+      email,
+      name,
+      theme,
+      login,
+      logout,
+      toggleTheme,
+      setProfileFromUser,
+    }),
+    [token, userId, role, email, name, theme, login, logout, toggleTheme, setProfileFromUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

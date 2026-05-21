@@ -1,254 +1,195 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "./ManagerBehavioral.css";
+import React, { useMemo, useState } from "react";
 import { useData } from "../../context/DataContext";
 import { useAuth } from "../../context/AuthContext";
+import PageShell from "../../components/layout/PageShell";
+import { filterTeamMembers, getEmployeeName } from "../../utils/evaluationHelpers";
+
+const QUESTIONS = [
+  { key: "communication", label: "Communication" },
+  { key: "teamwork", label: "Teamwork" },
+  { key: "problemSolving", label: "Problem solving" },
+  { key: "leadership", label: "Leadership" },
+  { key: "adaptability", label: "Adaptability" },
+  { key: "workQuality", label: "Work quality" },
+];
+
+const MAX_PER_QUESTION = 4;
 
 function ManagerBehavioral() {
-  const { employees, evaluations, submitBehavioral } = useData();
-  const { name } = useAuth();
+  const { employees, teams, evaluations, submitBehavioral, fetchEvaluations } = useData();
+  const { userId } = useAuth();
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-
+  const [submitting, setSubmitting] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [answers, setAnswers] = useState({
-    communication: "",
-    teamwork: "",
-    problemSolving: "",
-    leadership: "",
-    adaptability: "",
-    workQuality: ""
-  });
+  const [answers, setAnswers] = useState(
+    Object.fromEntries(QUESTIONS.map((q) => [q.key, ""]))
+  );
 
-  const handleEmployeeChange = (e) => {
-    setSelectedEmployee(e.target.value);
-    setSuccess("");
-    setError("");
-  };
-
-  const handleAnswerChange = (question, value) => {
-    setAnswers({
-      ...answers,
-      [question]: value
-    });
-  };
+  const roster = useMemo(
+    () => filterTeamMembers(employees, teams, userId),
+    [employees, teams, userId]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-
     if (!selectedEmployee) {
-      setError("Please select an employee to evaluate");
+      setError("Select an employee to evaluate.");
       return;
     }
-
-    const hasEmptyAnswers = Object.values(answers).some(answer => answer === "");
-    if (hasEmptyAnswers) {
-      setError("Please complete all evaluation questions");
+    if (Object.values(answers).some((v) => v === "")) {
+      setError("Complete all rating categories (1–4).");
       return;
     }
-
+    const totalScore = Object.values(answers).reduce((s, v) => s + Number(v), 0);
+    const maxScore = QUESTIONS.length * MAX_PER_QUESTION;
     try {
-      const selectedEmp = employees.find(emp => emp.id === parseInt(selectedEmployee));
-      
+      setSubmitting(true);
       await submitBehavioral({
-        employeeId: parseInt(selectedEmployee),
-        scores: {
-          communication: Number(answers.communication),
-          teamwork: Number(answers.teamwork),
-          problemSolving: Number(answers.problemSolving),
-          leadership: Number(answers.leadership),
-          adaptability: Number(answers.adaptability),
-          workQuality: Number(answers.workQuality)
-        },
-        totalScore:
-          Number(answers.communication) +
-          Number(answers.teamwork) +
-          Number(answers.problemSolving) +
-          Number(answers.leadership) +
-          Number(answers.adaptability) +
-          Number(answers.workQuality),
-        maxScore: 6 * 4, // 6 questions, 1-4 scale
-        date: new Date().toISOString()
+        employeeId: Number(selectedEmployee),
+        evaluatorId: Number(userId),
+        scores: Object.fromEntries(
+          QUESTIONS.map((q) => [q.key, Number(answers[q.key])])
+        ),
+        totalScore,
+        maxScore,
+        percentage: Number(((totalScore / maxScore) * 100).toFixed(1)),
       });
-
-      setSuccess(`Behavioral evaluation for ${selectedEmp?.name} saved successfully!`);
-      
+      await fetchEvaluations?.();
+      setSuccess(
+        `Behavioral evaluation saved for ${getEmployeeName(employees, selectedEmployee)}.`
+      );
       setSelectedEmployee("");
-      setAnswers({
-        communication: "",
-        teamwork: "",
-        problemSolving: "",
-        leadership: "",
-        adaptability: "",
-        workQuality: ""
-      });
-
+      setAnswers(Object.fromEntries(QUESTIONS.map((q) => [q.key, ""])));
     } catch (err) {
-      setError("Failed to save evaluation. Please try again.");
-      console.error("Submit error:", err);
+      setError(err.message || "Failed to save evaluation.");
+    } finally {
+      setSubmitting(false);
     }
-  };
-
-  const evaluationQuestions = [
-    { key: "communication", label: "Communication Skills", description: "How well does the employee communicate with team members and stakeholders?" },
-    { key: "teamwork", label: "Teamwork", description: "How effectively does the employee collaborate with others?" },
-    { key: "problemSolving", label: "Problem Solving", description: "How well does the employee identify and solve problems?" },
-    { key: "leadership", label: "Leadership", description: "How well does the employee demonstrate leadership qualities?" },
-    { key: "adaptability", label: "Adaptability", description: "How well does the employee adapt to changes and new situations?" },
-    { key: "workQuality", label: "Work Quality", description: "How would you rate the overall quality of the employee's work?" }
-  ];
-
-  // ----- Display helpers for table -----
-  const getEmployeeName = (id) => employees.find(e => Number(e.id) === Number(id))?.name || "Unknown";
-  const ensureScoresObject = (scores) => {
-    // Backend stores JSON; support both object and array-of-{question,score}
-    if (!scores) return {};
-    if (Array.isArray(scores)) {
-      return scores.reduce((acc, s) => {
-        const key = s.question || s.key;
-        if (key) acc[key] = Number(s.score || s.value || 0);
-        return acc;
-      }, {});
-    }
-    return scores; // assume object with keys
   };
 
   const behavioralRows = (evaluations || [])
-    .filter(ev => String(ev.type).toLowerCase() === "behavioral")
-    .filter(ev => !selectedEmployee || Number(ev.employee_id) === Number(selectedEmployee))
-    .map(ev => {
-      const s = ensureScoresObject(ev.scores);
-      const total = Number(ev.total_score ?? Object.values(s).reduce((sum, v) => sum + Number(v || 0), 0));
-      const max = Number(ev.max_score ?? (Object.keys(s).length * 4));
-      const pct = ev.percentage != null ? Number(ev.percentage) : (max > 0 ? (total / max) * 100 : 0);
-      return {
-        id: ev.id,
-        employeeId: ev.employee_id,
-        date: ev.date,
-        scores: s,
-        total,
-        max,
-        pct
-      };
-    });
+    .filter((ev) => ev.type === "behavioral")
+    .filter(
+      (ev) =>
+        !selectedEmployee || Number(ev.employee_id) === Number(selectedEmployee)
+    )
+    .filter((ev) =>
+      roster.some((m) => Number(m.id) === Number(ev.employee_id))
+    );
 
   return (
-    <div className="manager-behavioral">
-      <header className="header">
-        <h1>Behavioral Evaluation</h1>
-        <Link to="/leader" className="back-btn">← Back to Dashboard</Link>
-      </header>
+    <PageShell
+      title="Behavioral review"
+      subtitle="Leader evaluation of team behavior (15% weight). Rate each category 1–4."
+      backTo="/leader"
+      wide
+    >
+      {error && <div className="alert alert--error">{error}</div>}
+      {success && <div className="alert alert--success">{success}</div>}
 
-      <div className="form-container">
-        <form onSubmit={handleSubmit} className="evaluation-form">
-          <div className="employee-selection">
-            <label htmlFor="employee">Select Employee to Evaluate *</label>
+      <form onSubmit={handleSubmit} className="stack">
+        <div className="card">
+          <div className="form-field">
+            <label>Team member *</label>
             <select
-              id="employee"
               value={selectedEmployee}
-              onChange={handleEmployeeChange}
+              onChange={(e) => setSelectedEmployee(e.target.value)}
               required
             >
-              <option value="">Choose an employee...</option>
-              {employees.map(emp => (
+              <option value="">Select employee…</option>
+              {roster.map((emp) => (
                 <option key={emp.id} value={emp.id}>
-                  {emp.name} - {emp.department || 'No Department'}
+                  {emp.name} — {emp.department || "—"}
                 </option>
               ))}
             </select>
           </div>
+        </div>
 
-          {selectedEmployee && (
-            <div className="evaluation-questions">
-              <h3>Rate the following aspects (1-5 scale)</h3>
-              
-              {evaluationQuestions.map(question => (
-                <div key={question.key} className="question-group">
-                  <label>{question.label}</label>
-                  <p className="question-description">{question.description}</p>
-                  <div className="rating-options">
-                    {[1, 2, 3, 4].map(rating => (
-                      <label key={rating} className="rating-option">
-                        <input
-                          type="radio"
-                          name={question.key}
-                          value={rating}
-                          checked={answers[question.key] === rating.toString()}
-                          onChange={(e) => handleAnswerChange(question.key, e.target.value)}
-                        />
-                        <span className="rating-label">{rating}</span>
-                      </label>
-                    ))}
-                  </div>
+        {selectedEmployee && (
+          <div className="card">
+            <h3 style={{ marginTop: 0 }}>Ratings (1–4)</h3>
+            {QUESTIONS.map((q) => (
+              <div
+                key={q.key}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "12px 0",
+                  borderBottom: "1px solid var(--border)",
+                  flexWrap: "wrap",
+                  gap: 8,
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>{q.label}</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[1, 2, 3, 4].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={`btn sm ${answers[q.key] === String(n) ? "primary" : ""}`}
+                      onClick={() =>
+                        setAnswers({ ...answers, [q.key]: String(n) })
+                      }
+                    >
+                      {n}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            ))}
+          </div>
+        )}
 
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+        <button
+          type="submit"
+          className="btn primary"
+          disabled={submitting || !selectedEmployee}
+        >
+          {submitting ? "Submitting…" : "Submit behavioral evaluation"}
+        </button>
+      </form>
 
-          {selectedEmployee && (
-            <div className="form-actions">
-              <button type="submit" className="submit-btn">
-                Submit Evaluation
-              </button>
-            </div>
-          )}
-        </form>
-      </div>
-
-      {/* ----- Behavioral Evaluations Table ----- */}
-      <div className="results-table" style={{ marginTop: 24 }}>
-        <h2>Behavioral Evaluations</h2>
-        <p style={{ marginBottom: 8 }}>
-          {selectedEmployee ? `Showing results for: ${getEmployeeName(selectedEmployee)}` : "Showing all behavioral evaluations"}
-        </p>
-
-        <div className="table-container">
-          <table className="evaluation-table">
+      <section style={{ marginTop: 32 }}>
+        <h2 className="section-title">Submitted behavioral evaluations</h2>
+        <div className="data-table-wrap">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Date</th>
                 <th>Employee</th>
-                <th>Communication</th>
-                <th>Teamwork</th>
-                <th>Problem Solving</th>
-                <th>Leadership</th>
-                <th>Adaptability</th>
-                <th>Work Quality</th>
                 <th>Total</th>
-                <th>Percentage</th>
+                <th>%</th>
               </tr>
             </thead>
             <tbody>
               {behavioralRows.length === 0 ? (
                 <tr>
-                  <td colSpan="10" style={{ textAlign: "center" }}>No behavioral evaluations found.</td>
+                  <td colSpan={4} style={{ color: "var(--muted)" }}>
+                    No behavioral evaluations yet.
+                  </td>
                 </tr>
               ) : (
-                behavioralRows.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.date ? new Date(r.date).toLocaleString() : ""}</td>
-                    <td>{getEmployeeName(r.employeeId)}</td>
-                    <td>{r.scores.communication ?? "-"}</td>
-                    <td>{r.scores.teamwork ?? "-"}</td>
-                    <td>{r.scores.problemSolving ?? "-"}</td>
-                    <td>{r.scores.leadership ?? "-"}</td>
-                    <td>{r.scores.adaptability ?? "-"}</td>
-                    <td>{r.scores.workQuality ?? "-"}</td>
-                    <td>{r.total}/{r.max}</td>
-                    <td>{r.pct.toFixed(1)}%</td>
+                behavioralRows.map((ev) => (
+                  <tr key={ev.id}>
+                    <td>{ev.date ? new Date(ev.date).toLocaleDateString() : "—"}</td>
+                    <td>{getEmployeeName(employees, ev.employee_id)}</td>
+                    <td>
+                      {ev.total_score} / {ev.max_score}
+                    </td>
+                    <td>{Number(ev.percentage || 0).toFixed(1)}%</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </section>
+    </PageShell>
   );
 }
 

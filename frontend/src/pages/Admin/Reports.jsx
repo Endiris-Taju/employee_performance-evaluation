@@ -1,230 +1,123 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "./Reports.css";
+import React, { useMemo, useState } from "react";
 import { useData } from "../../context/DataContext";
+import PageShell from "../../components/layout/PageShell";
+import EvaluationDetailCard from "../../components/EvaluationDetailCard";
+import StatCard from "../../components/ui/StatCard";
+import {
+  exportEvaluationsCsv,
+  getEmployeeName,
+  getEvaluatorName,
+} from "../../utils/evaluationHelpers";
 
 function Reports() {
-  const { collectedEvaluations, employees, teams, complaints } = useData();
+  const { collectedEvaluations, employees } = useData();
   const [filterType, setFilterType] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
 
-  const getEmployeeName = (id) => {
-    const employee = employees.find(e => e.id === id);
-    return employee ? employee.name : 'Unknown Employee';
-  };
-
-  const getTeamName = (id) => {
-    const team = teams.find(t => t.id === id);
-    return team ? team.name : 'Unknown Team';
-  };
-
-  const filteredEvaluations = collectedEvaluations.filter(evaluation => {
-    const matchesType = filterType === "all" || evaluation.type === filterType;
-    const matchesSearch = searchTerm === "" || 
-      getEmployeeName(evaluation.employee_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      evaluation.type.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesType && matchesSearch;
-  });
-
-  const getEvaluationStats = () => {
-    const workRateEvals = collectedEvaluations.filter(e => e.type === "workrate");
-    const behavioralEvals = collectedEvaluations.filter(e => e.type === "behavioral");
-    const peerEvals = collectedEvaluations.filter(e => e.type === "peer");
-    const selfEvals = collectedEvaluations.filter(e => e.type === "self");
-
+  const stats = useMemo(() => {
+    const evs = collectedEvaluations || [];
     return {
-      workRate: workRateEvals.length,
-      behavioral: behavioralEvals.length,
-      peer: peerEvals.length,
-      self: selfEvals.length,
-      total: collectedEvaluations.length
+      total: evs.length,
+      workrate: evs.filter((e) => e.type === "workrate").length,
+      behavioral: evs.filter((e) => e.type === "behavioral").length,
+      peer: evs.filter((e) => e.type === "peer").length,
+      self: evs.filter((e) => e.type === "self").length,
     };
-  };
+  }, [collectedEvaluations]);
 
-  const stats = getEvaluationStats();
+  const filteredEvaluations = useMemo(() => {
+    return (collectedEvaluations || []).filter((evaluation) => {
+      const matchesType = filterType === "all" || evaluation.type === filterType;
+      const name = getEmployeeName(employees, evaluation.employee_id).toLowerCase();
+      const matchesSearch =
+        searchTerm === "" ||
+        name.includes(searchTerm.toLowerCase()) ||
+        String(evaluation.type).toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesType && matchesSearch;
+    });
+  }, [collectedEvaluations, filterType, searchTerm, employees]);
 
   const exportToCSV = () => {
-    const headers = ["Employee", "Type", "Score", "Max Score", "Date", "Details"];
-    const csvData = filteredEvaluations.map(evaluation => [
-      getEmployeeName(evaluation.employee_id),
-      evaluation.type,
-      evaluation.total_score,
-      evaluation.maxScore,
-      new Date(evaluation.date).toLocaleDateString(),
-      JSON.stringify(evaluation)
-    ]);
-
-    const csvContent = [headers, ...csvData]
-      .map(row => row.map(cell => `"${cell}"`).join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `evaluations_${filterType}_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportEvaluationsCsv(
+      filteredEvaluations.map((ev) => ({
+        employeeName: getEmployeeName(employees, ev.employee_id),
+        type: ev.type,
+        total_score: ev.total_score,
+        max_score: ev.max_score,
+        percentage: ev.percentage,
+        date: ev.date,
+        evaluatorName: getEvaluatorName(employees, ev),
+      })),
+      `reports_${filterType}_${new Date().toISOString().split("T")[0]}.csv`
+    );
   };
 
   return (
-    <div className="container" style={{ paddingTop: 24, paddingBottom: 24 }}>
-      <div className="reports-page">
-        <div className="reports-header">
-          <h1>Evaluation Reports</h1>
-          <p>Comprehensive view of all collected evaluations across the organization</p>
-        </div>
+    <PageShell
+      title="Evaluation reports"
+      subtitle="Full detail for every evaluation submission across the organization."
+      backTo="/admin"
+      actions={
+        <button type="button" className="btn primary" onClick={exportToCSV}>
+          Export CSV
+        </button>
+      }
+      wide
+    >
+      <div className="grid grid-5">
+        <StatCard label="Total" value={stats.total} />
+        <StatCard label="Work rate" value={stats.workrate} />
+        <StatCard label="Behavioral" value={stats.behavioral} />
+        <StatCard label="Peer" value={stats.peer} />
+        <StatCard label="Self" value={stats.self} />
+      </div>
 
-        {/* Statistics Overview */}
-        <div className="stats-overview">
-          <div className="stat-card">
-            <h3>Total Evaluations</h3>
-            <span className="stat-number">{stats.total}</span>
-          </div>
-          <div className="stat-card">
-            <h3>Work Rate</h3>
-            <span className="stat-number">{stats.workRate}</span>
-          </div>
-          <div className="stat-card">
-            <h3>Behavioral</h3>
-            <span className="stat-number">{stats.behavioral}</span>
-          </div>
-          <div className="stat-card">
-            <h3>Peer</h3>
-            <span className="stat-number">{stats.peer}</span>
-          </div>
-          <div className="stat-card">
-            <h3>Self</h3>
-            <span className="stat-number">{stats.self}</span>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="filters-section">
-          <div className="filter-controls">
-            <select 
-              value={filterType} 
-              onChange={(e) => setFilterType(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Types</option>
-              <option value="workrate">Work Rate</option>
+      <div className="card card--flat">
+        <div className="grid grid-3">
+          <div className="form-field">
+            <label>Filter by type</label>
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <option value="all">All types</option>
+              <option value="workrate">Work rate</option>
               <option value="behavioral">Behavioral</option>
               <option value="peer">Peer</option>
               <option value="self">Self</option>
             </select>
-            
+          </div>
+          <div className="form-field" style={{ gridColumn: "span 2" }}>
+            <label>Search</label>
             <input
               type="text"
-              placeholder="Search by employee name or type..."
+              placeholder="Employee name or evaluation type…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
             />
-            
-            <button className="btn primary" onClick={exportToCSV}>
-              Export to CSV
-            </button>
           </div>
         </div>
-
-        {/* Evaluations List */}
-        <div className="evaluations-section">
-          <h2>Evaluation Details</h2>
-          
-          {filteredEvaluations.length === 0 ? (
-            <div className="no-results">
-              <p>No evaluations found matching the current filters.</p>
-            </div>
-          ) : (
-            <div className="evaluations-grid">
-              {filteredEvaluations.map(evaluation => (
-                <div key={evaluation.id} className="evaluation-card">
-                  <div className="eval-header">
-                    <span className={`eval-type ${evaluation.type}`}>
-                      {evaluation.type.charAt(0).toUpperCase() + evaluation.type.slice(1)}
-                    </span>
-                    <span className="eval-score">
-                      {Number(evaluation.total_score || 0).toFixed(2)} / {evaluation.max_score || 0}
-                    </span>
-                  </div>
-                  
-                  <div className="eval-body">
-                    <div className="eval-info">
-                      <p><strong>Employee:</strong> {getEmployeeName(evaluation.employee_id)}</p>
-                      <p><strong>Date:</strong> {new Date(evaluation.date).toLocaleDateString()}</p>
-                      <p><strong>Time:</strong> {new Date(evaluation.date).toLocaleTimeString()}</p>
-                    </div>
-                    
-                    {evaluation.type === "workrate" && evaluation.tasks && (
-                      <div className="eval-details">
-                        <p><strong>Tasks Evaluated:</strong> {evaluation.tasks.length}</p>
-                        <div className="tasks-list">
-                          {evaluation.tasks.map((task, index) => (
-                            <div key={index} className="task-item">
-                              <span>{task.task}</span>
-                              <span>{task.percent}% - Rank {task.rank}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {evaluation.type === "behavioral" && evaluation.criteria && (
-                      <div className="eval-details">
-                        <p><strong>Criteria Evaluated:</strong> {evaluation.criteria.length}</p>
-                      </div>
-                    )}
-                    
-                    {evaluation.type === "peer" && (
-                      <div className="eval-details">
-                        <p><strong>From:</strong> {getEmployeeName(evaluation.fromEmployeeId)}</p>
-                        <p><strong>To:</strong> {getEmployeeName(evaluation.toEmployeeId)}</p>
-                        <p><strong>Team:</strong> {getTeamName(evaluation.teamId)}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Complaints Section */}
-        <div className="complaints-section">
-          <h2>Employee Complaints</h2>
-          {complaints.length === 0 ? (
-            <p>No complaints filed at this time.</p>
-          ) : (
-            <div className="complaints-list">
-              {complaints.map(complaint => {
-                const employee = employees.find(e => e.id === complaint.employeeId);
-                return (
-                  <div key={complaint.id} className="complaint-item">
-                    <div className="complaint-header">
-                      <h4>{employee?.name || 'Unknown Employee'}</h4>
-                      <span className={`status ${complaint.status}`}>
-                        {complaint.status}
-                      </span>
-                    </div>
-                    <p><strong>Reason:</strong> {complaint.reason}</p>
-                    <p><strong>Description:</strong> {complaint.description}</p>
-                    <p><strong>Date:</strong> {new Date(complaint.date).toLocaleDateString()}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="back-link">
-          <Link to="/admin" className="btn secondary">← Back to Dashboard</Link>
-        </div>
       </div>
-    </div>
+
+      <section>
+        <h2 className="section-title">
+          {filteredEvaluations.length} report{filteredEvaluations.length !== 1 ? "s" : ""}
+        </h2>
+        {filteredEvaluations.length === 0 ? (
+          <div className="card">
+            <p style={{ color: "var(--muted)", margin: 0 }}>No evaluations match your filters.</p>
+          </div>
+        ) : (
+          filteredEvaluations.map((evaluation) => (
+            <EvaluationDetailCard
+              key={evaluation.id}
+              evaluation={evaluation}
+              employees={employees}
+              defaultOpen={expandedId === evaluation.id}
+            />
+          ))
+        )}
+      </section>
+    </PageShell>
   );
 }
 
 export default Reports;
-
-

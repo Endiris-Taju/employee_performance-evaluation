@@ -22,8 +22,9 @@ import AllEvaluations from "./pages/Leader/AllEvaluations";
 // Employee / Member pages
 import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
 import SelfEvaluation from "./pages/Employee/SelfEvaluation";
-import PeerEvaluationForm from "./pages/Employee/PeerEvaluationForm";
 import PeerEvaluation from "./pages/Employee/PeerEvaluation";
+import Cycles from "./pages/Admin/Cycles";
+import AuditLog from "./pages/Admin/AuditLog";
 import EmployeeReports from "./pages/Employee/Reports";
 
 // Common pages
@@ -118,6 +119,30 @@ const App = () => {
           }
         />
         <Route
+          path="/cycles"
+          element={
+            <RequireAuth roles={["admin"]}>
+              <Cycles />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/audit-log"
+          element={
+            <RequireAuth roles={["admin"]}>
+              <AuditLog />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/evaluations"
+          element={
+            <RequireAuth roles={["admin", "leader"]}>
+              <AllEvaluations />
+            </RequireAuth>
+          }
+        />
+        <Route
           path="/employee/:id"
           element={
             <RequireAuth roles={["admin"]}>
@@ -180,7 +205,7 @@ const App = () => {
         <Route
           path="/self-evaluation"
           element={
-            <RequireAuth roles={["employee", "member"]}>
+            <RequireAuth roles={["admin", "leader", "employee", "member"]}>
               <SelfEvaluation />
             </RequireAuth>
           }
